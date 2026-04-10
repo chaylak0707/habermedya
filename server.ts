@@ -1,69 +1,91 @@
-app.use("/api", (req, res) => {
-  const url = req.url;
+import express from "express";
+import path from "path";
+import fs from "fs";
+import { createClient } from "@libsql/client";
 
-  // CATEGORIES
-  if (url.includes("categories")) {
-    return res.json([
-      {
-        id: 1,
-        name: "Genel",
-        title: "Genel",
-        slug: "genel",
-        label: "Genel",
-        description: "Genel kategori",
-        isActive: 1,
-      },
-    ]);
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// ✅ TURSO BAĞLANTI
+const turso = createClient({
+  url: process.env.TURSO_DATABASE_URL!,
+  authToken: process.env.TURSO_AUTH_TOKEN!,
+});
+
+app.use(express.json());
+
+// ✅ STATIC
+const distPath = path.join(__dirname, "dist");
+app.use(express.static(distPath));
+
+/* =========================
+   ✅ GERÇEK API ROUTES
+========================= */
+
+// KATEGORİLER
+app.get("/api/categories", async (req, res) => {
+  try {
+    const result = await turso.execute(`SELECT * FROM categories`);
+    res.json(result.rows);
+  } catch (err: any) {
+    console.error("categories hata:", err);
+    res.json([]);
+  }
+});
+
+// MENÜLER
+app.get("/api/menus", async (req, res) => {
+  try {
+    const result = await turso.execute(`SELECT * FROM menus`);
+    res.json(result.rows);
+  } catch (err: any) {
+    console.error("menus hata:", err);
+    res.json([]);
+  }
+});
+
+// ARTİCLE
+app.get("/api/articles", async (req, res) => {
+  try {
+    const result = await turso.execute(`SELECT * FROM articles`);
+    res.json(result.rows);
+  } catch (err: any) {
+    console.error("articles hata:", err);
+    res.json([]);
+  }
+});
+
+// LOGIN (fake kalsın şimdilik)
+app.post("/api/login", (req, res) => {
+  res.json({ success: true, user: { role: "admin" } });
+});
+
+// TEST
+app.get("/api/test-db", async (req, res) => {
+  try {
+    const result = await turso.execute("SELECT 1");
+    res.json({ ok: true, result });
+  } catch (err: any) {
+    res.json({ ok: false, error: err.message });
+  }
+});
+
+/* =========================
+   ✅ REACT FALLBACK
+========================= */
+
+app.get("/*", (req, res) => {
+  const indexPath = path.join(distPath, "index.html");
+
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
   }
 
-  // MENUS
-  if (url.includes("menus")) {
-    return res.json([
-      {
-        id: 1,
-        name: "Ana Menü",
-        title: "Ana Menü",
-        slug: "ana-menu",
-        label: "Ana Menü",
-        items: [
-          {
-            id: 1,
-            name: "Ana Sayfa",
-            title: "Ana Sayfa",
-            slug: "home",
-            label: "Ana Sayfa",
-          },
-        ],
-      },
-    ]);
-  }
+  res.status(404).send("Build yok");
+});
 
-  // ARTICLES
-  if (url.includes("articles")) {
-    return res.json([
-      {
-        id: 1,
-        title: "Demo içerik",
-        name: "Demo içerik",
-        slug: "demo",
-        label: "Demo içerik",
-        content: "Test içerik",
-      },
-    ]);
-  }
+/* ========================= */
 
-  // LOGIN / ME
-  if (url.includes("login") || url.includes("me")) {
-    return res.json({
-      success: true,
-      user: {
-        id: 1,
-        name: "Admin",
-        username: "admin",
-        role: "admin",
-      },
-    });
-  }
-
-  return res.json([]);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("Server çalışıyor:", PORT);
 });
