@@ -13,26 +13,18 @@ async function startServer() {
 
   console.log("Sunucu başlatılıyor...");
 
-  // 1. Veritabanı Bağlantısı (Hata olsa bile sunucuyu çökertmemesi için try-catch içinde)
-  let turso: any;
-  try {
-    turso = createClient({
-      url: (process.env.TURSO_DATABASE_URL || "").trim(),
-      authToken: (process.env.TURSO_AUTH_TOKEN || "").trim(),
-    });
-    console.log("Veritabanı istemcisi oluşturuldu.");
-  } catch (dbErr) {
-    console.error("Turso bağlantı hatası:", dbErr);
-  }
+  const turso = createClient({
+    url: (process.env.TURSO_DATABASE_URL || "").trim(),
+    authToken: (process.env.TURSO_AUTH_TOKEN || "").trim(),
+  });
 
   app.use(express.json({ limit: '50mb' }));
 
-  // 2. Uploads ve Statik Dosyalar (Önce bunlar tanımlanmalı)
   const uploadDir = path.join(__dirname, 'uploads');
   if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
   app.use('/uploads', express.static(uploadDir));
 
-  // 3. API Rotaları (Regex kullanmadan, en basit haliyle)
+  // --- API Rotaları ---
   app.post('/api/query', async (req, res) => {
     try {
       const { sql, args } = req.body;
@@ -43,18 +35,18 @@ async function startServer() {
     }
   });
 
-  // Admin login için geçici cevap (Hata almamak için)
   app.all(['/api/admin/login', '/api/admin/me'], (req, res) => {
     res.json({ success: true, user: { role: 'admin' } });
   });
 
-  // 4. Production Ayarları
+  // --- Üretim (Production) Ayarları ---
   const distPath = path.join(__dirname, 'dist');
   if (fs.existsSync(distPath)) {
     app.use(express.static(distPath));
     
-    // TÜM ROTALARI React'e yönlendir (En sağlam yöntem)
-    app.get('*', (req, res) => {
+    // HATA BURADAYDI: '*' yerine '{/*path}' kullanarak yeni kütüphaneyi mutlu ediyoruz
+    app.get('{/*path}', (req, res) => {
+      // Eğer istek /api ile başlıyorsa frontend'e yönlendirme, 404 ver
       if (req.path.startsWith('/api')) {
         return res.status(404).json({ error: "API bulunamadı" });
       }
@@ -62,14 +54,12 @@ async function startServer() {
     });
   }
 
-  // 5. Sunucuyu Dinle
-  app.listen(PORT, () => {
+  app.listen(PORT, "0.0.0.0", () => {
     console.log(`Sunucu aktif: Port ${PORT}`);
   });
 }
 
-// Kritik: Hata yakalayıcıyı dışarıda tutuyoruz
 startServer().catch(err => {
-  console.error("BAŞLATMA HATASI DETAYI:", err);
+  console.error("KRİTİK HATA:", err);
   process.exit(1);
 });
