@@ -3,7 +3,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createClient } from "@libsql/client";
 import fs from "fs";
-import crypto from "crypto";
 import multer from "multer";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -28,7 +27,7 @@ async function startServer() {
 
   console.log("Sunucu başlatılıyor...");
 
-  // Yeni Turso bağlantısı (Render'daki güncel bilgileri kullanır)
+  // Yeni Turso bağlantısı
   const turso = createClient({
     url: process.env.TURSO_DATABASE_URL?.trim() || "",
     authToken: process.env.TURSO_AUTH_TOKEN?.trim() || "",
@@ -38,7 +37,7 @@ async function startServer() {
     await turso.execute("SELECT 1");
     console.log("Veritabanına bağlandık!");
 
-    // TABLOLARI OTOMATİK OLUŞTURMA (Yeni hesapta tabloları bu kod kendi kuracak)
+    // TABLOLARI OTOMATİK OLUŞTURMA
     await turso.execute(`CREATE TABLE IF NOT EXISTS config (id TEXT PRIMARY KEY, logoUrl TEXT, siteName TEXT, siteTitle TEXT, siteDescription TEXT, siteKeywords TEXT, footerText TEXT)`);
     await turso.execute(`CREATE TABLE IF NOT EXISTS articles (id TEXT PRIMARY KEY, title TEXT, summary TEXT, content TEXT, author TEXT, category TEXT, createdAt TEXT, imageUrl TEXT, isActive INTEGER)`);
     await turso.execute(`CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, name TEXT, color TEXT, isActive INTEGER DEFAULT 1)`);
@@ -51,6 +50,9 @@ async function startServer() {
   }
 
   app.use(express.json({ limit: '50mb' }));
+  
+  // Statik dosyalar için (uploads klasörü vb.)
+  app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
   // --- API ROTALARINI BURAYA EKLEYEBİLİRSİN ---
 
@@ -58,13 +60,21 @@ async function startServer() {
     const distPath = path.join(__dirname, 'dist');
     app.use(express.static(distPath));
     
-    // RENDER HATASINI ÇÖZEN KRİTİK YÖNLENDİRME
-    app.get('/:any*', (req, res) => {
+    // RENDER HATASINI ÇÖZEN DÜZELTİLMİŞ YÖNLENDİRME
+    // "/:any*" yerine "*" kullanarak uyumluluk sağlandı.
+    app.get('*', (req, res) => {
+      // API isteklerini dışarıda tutmak için basit bir kontrol (isteğe bağlı)
+      if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: "API rotası bulunamadı" });
+      }
       res.sendFile(path.join(distPath, 'index.html'));
     });
   } else {
     const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
+    const vite = await createViteServer({ 
+      server: { middlewareMode: true }, 
+      appType: "spa" 
+    });
     app.use(vite.middlewares);
   }
 
