@@ -26,33 +26,35 @@ async function startServer() {
 
   // --- API Rotaları ---
 
-  // Genel Sorgu Rotası
+  // Tüm veritabanı sorgularını karşılayan ana rota
   app.post('/api/query', async (req, res) => {
     try {
       const { sql, args } = req.body;
       const result = await turso.execute({ sql, args: args || [] });
       res.json(result);
     } catch (error: any) {
+      console.error("Sorgu hatası:", error);
       res.status(500).json({ error: error.message });
     }
   });
 
-  // Hata veren Menü Rotası (Boş dizi dönerek beyaz ekranı engeller)
-  app.get('/api/menus', async (req, res) => {
+  // Frontend'in beklediği ama boş gelince çöktüğü rotalar
+  // Veritabanı boş olsa bile hata vermemesi için boş dizi [] dönerler
+  app.get(['/api/menus', '/api/categories', '/api/articles'], async (req, res) => {
     try {
-      const result = await turso.execute("SELECT * FROM categories WHERE isActive = 1");
+      const table = req.path.split('/').pop();
+      const result = await turso.execute(`SELECT * FROM ${table}`);
       res.json(result.rows || []);
     } catch {
-      res.json([]);
+      res.json([]); // Hata olursa boş liste gönder, site çökmesin
     }
   });
 
-  // Hava Durumu ve Market gibi ek rotalar (Hata vermemesi için boş veri döner)
+  // Diğer yardımcı rotalar
   app.get(['/api/weather', '/api/market', '/api/admin/top-menu'], (req, res) => {
     res.json({ success: true, data: [] });
   });
 
-  // Admin Kontrolleri
   app.all(['/api/admin/login', '/api/admin/me'], (req, res) => {
     res.json({ success: true, user: { role: 'admin' } });
   });
@@ -62,7 +64,6 @@ async function startServer() {
   if (fs.existsSync(distPath)) {
     app.use(express.static(distPath));
     
-    // Her şeyi yakalayan middleware (En güvenli yöntem)
     app.use((req, res, next) => {
       if (req.path.startsWith('/api')) {
         return res.status(404).json({ error: "API bulunamadı" });
