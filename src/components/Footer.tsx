@@ -17,7 +17,7 @@ export default function Footer() {
                 <img 
                   src={normalizeImageUrl(logoUrl)} 
                   alt={siteName} 
-                  className="h-12 w-auto object-contain" 
+                  className="h-10 w-auto object-contain" 
                   style={{ filter: 'drop-shadow(0 0 1px white) drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)' }}
                   referrerPolicy="no-referrer"
                 />
@@ -31,20 +31,6 @@ export default function Footer() {
             <p className="text-gray-400 text-sm leading-relaxed">
               Türkiye'den ve dünyadan en son haberler, güncel gelişmeler, siyaset, ekonomi, spor ve teknoloji haberleri Mega Haber'de.
             </p>
-          </div>
-
-          {/* Quick Links */}
-          <div>
-            <h4 className="text-lg font-bold mb-6 border-l-4 border-[#e60026] pl-3">Kategoriler</h4>
-            <ul className="grid grid-cols-2 gap-2 text-sm text-gray-400">
-              {categories.slice(0, 10).map((cat, i) => (
-                <li key={i}>
-                  <Link to={`/category/${slugify(cat.name)}`} className="hover:text-white transition-colors">
-                    {cat.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
           </div>
 
           {/* Services Section */}

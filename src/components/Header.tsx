@@ -101,10 +101,10 @@ export default function Header() {
         <div className="max-w-[1280px] mx-auto flex justify-between items-center py-2 md:py-6 px-2 sm:px-4">
           <Link to="/" className="flex items-center">
             {logoUrl && (
-              <img src={normalizeImageUrl(logoUrl)} alt={siteName} className="w-auto max-h-10 md:max-h-12 object-contain" loading="eager" />
+              <img src={normalizeImageUrl(logoUrl)} alt={siteName} className="w-auto max-h-8 md:max-h-10 object-contain" loading="eager" />
             )}
             {!logoUrl && (
-              <div className="text-2xl md:text-3xl font-bold">
+              <div className="text-xl md:text-2xl font-bold">
                 <span className="text-gray-600">MEGA</span>
                 <span className="bg-[#e60026] text-white px-2 py-1 ml-1 rounded">HABER</span>
               </div>

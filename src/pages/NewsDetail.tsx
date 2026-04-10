@@ -184,7 +184,7 @@ export default function NewsDetail(props: { onReady: () => void }) {
               <div className="flex items-center gap-2">
                 <div className="w-1 h-4" style={{ backgroundColor: categories.find(c => c.name === article.category)?.color || '#e60026' }}></div>
                 <div className="w-1 h-4" style={{ backgroundColor: categories.find(c => c.name === article.category)?.color || '#e60026' }}></div>
-                <span className="font-bold text-sm tracking-wider" style={{ color: categories.find(c => c.name === article.category)?.color || '#e60026' }}>{article.category.toUpperCase()}</span>
+                <span className="font-bold tracking-wider cat-label" style={{ color: categories.find(c => c.name === article.category)?.color || '#e60026' }}>{article.category.toUpperCase()}</span>
               </div>
               <div className="text-gray-400 text-xs flex items-center gap-4">
                 <span className="flex items-center gap-1"><Eye size={14} /> 283 kez okundu</span>
@@ -326,7 +326,7 @@ export default function NewsDetail(props: { onReady: () => void }) {
           {/* Manşet Haberleri */}
           <div className="bg-white p-4 border border-gray-100 shadow-sm rounded-sm">
             <div className="mb-6">
-              <div className="inline-block bg-black text-white px-4 py-2 font-bold text-sm clip-path-category">
+              <div className="inline-block bg-black text-white px-4 py-2 font-bold clip-path-category">
                 Manşet Haberleri
               </div>
               <div className="border-b-2 border-black mt-[-2px]"></div>
@@ -339,7 +339,7 @@ export default function NewsDetail(props: { onReady: () => void }) {
                       {news.imageUrl && (
                         <img src={normalizeImageUrl(news.imageUrl)} alt="" className="news-image transition-transform group-hover:scale-110" />
                       )}
-                      <div className="absolute top-2 left-2 text-white text-[8px] px-1 font-bold uppercase" style={{ backgroundColor: categories.find(c => c.name === news.category)?.color || '#f97316' }}>{news.category}</div>
+                      <div className="absolute top-2 left-2 text-white cat-label px-1 font-bold uppercase" style={{ backgroundColor: categories.find(c => c.name === news.category)?.color || '#f97316' }}>{news.category}</div>
                     </div>
                     <h4 className="text-xs font-bold text-gray-800 line-clamp-2 group-hover:text-red-600">{news.title}</h4>
                   </Link>

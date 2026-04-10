@@ -172,7 +172,7 @@ export default function Home() {
                     }}
                   />
                   <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/95 via-black/50 to-transparent p-4 md:p-8 text-white">
-                    <span className="px-2 py-1 text-[10px] md:text-xs font-bold mb-2 inline-block rounded-sm" style={{ backgroundColor: categories.find(c => c.name === (mainArticle?.category || 'SİYASET'))?.color || '#e60026' }}>
+                    <span className="px-2 py-1 cat-label font-bold mb-2 inline-block rounded-sm" style={{ backgroundColor: categories.find(c => c.name === (mainArticle?.category || 'SİYASET'))?.color || '#e60026' }}>
                       {mainArticle?.category?.toUpperCase() || 'SİYASET'}
                     </span>
                     <h1 className="text-lg sm:text-2xl md:text-4xl font-bold mb-2 group-hover:text-red-400 transition-colors line-clamp-2 leading-tight">
@@ -214,7 +214,7 @@ export default function Home() {
                 className="flex-1 flex items-center gap-3 md:gap-4 px-4 py-2 group min-h-0"
               >
                 <div className="flex-1 min-w-0">
-                  <span className="px-1.5 py-0.5 text-[9px] font-bold text-white uppercase rounded-sm" style={{ backgroundColor: categories.find(c => c.name === news.category)?.color || '#e60026' }}>
+                  <span className="px-1.5 py-0.5 cat-label font-bold text-white uppercase rounded-sm" style={{ backgroundColor: categories.find(c => c.name === news.category)?.color || '#e60026' }}>
                     {news.category}
                   </span>
                   <p className="text-[9px] text-gray-400 mt-1 font-medium">
@@ -278,7 +278,7 @@ export default function Home() {
               </div>
               <div className="p-3 md:p-4 flex-1 flex flex-col">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="px-2 py-0.5 text-[9px] md:text-[10px] font-bold text-white uppercase rounded-sm" style={{ backgroundColor: categories.find(c => c.name === news.category)?.color || '#e60026' }}>
+                  <span className="px-2 py-0.5 cat-label font-bold text-white uppercase rounded-sm" style={{ backgroundColor: categories.find(c => c.name === news.category)?.color || '#e60026' }}>
                     {news.category}
                   </span>
                   <div className="flex items-center gap-1 text-[9px] md:text-[10px] text-gray-400 font-medium">
@@ -340,7 +340,7 @@ export default function Home() {
                 <div className="relative h-9 mb-6">
                   <div className="absolute inset-x-0 bottom-0 h-[3px]" style={{ backgroundColor: cat.color }}></div>
                   <div 
-                    className="absolute left-0 top-0 h-full px-6 flex items-center text-white font-black text-sm tracking-widest"
+                    className="absolute left-0 top-0 h-full px-6 flex items-center text-white font-black tracking-widest clip-path-category"
                     style={{ 
                       backgroundColor: cat.color,
                       clipPath: 'polygon(0 0, 100% 0, 85% 100%, 0 100%)'

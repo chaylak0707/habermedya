@@ -65,7 +65,7 @@ export default function CategoryPage() {
                   }}
                 />
                 <div 
-                  className="absolute top-2 left-2 text-white text-xs font-bold px-2 py-1 uppercase"
+                  className="absolute top-2 left-2 text-white cat-label font-bold px-2 py-1 uppercase"
                   style={{ backgroundColor: getCategoryColor(article.category) }}
                 >
                   {article.category}
