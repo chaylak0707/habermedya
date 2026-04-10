@@ -47,20 +47,25 @@ async function startServer() {
 
   console.log(`Connecting to Turso at: ${dbUrl.split('.io')[0]}.io...`);
 
-  // Turso client
+  // Turso client using native fetch (Node 22+)
   const turso = createClient({
     url: dbUrl,
     authToken: dbToken || "",
+    // Explicitly use global fetch to avoid cross-fetch or other polyfills
+    fetch: globalThis.fetch,
   });
 
   // Retry logic for database initialization
-  const initDb = async (retries = 3, delay = 5000) => {
-    // Small initial delay to let network settle on some platforms (like Render)
-    await new Promise(resolve => setTimeout(resolve, 2000));
+  const initDb = async (retries = 5, delay = 5000) => {
+    // Initial delay to let Render's network interface fully initialize
+    await new Promise(resolve => setTimeout(resolve, 3000));
     
     for (let i = 0; i < retries; i++) {
       try {
         console.log(`Database initialization attempt ${i + 1}...`);
+        // Simple ping to test connection
+        await turso.execute("SELECT 1");
+        
         // Initialize database schema
         await turso.execute(`CREATE TABLE IF NOT EXISTS config (id TEXT PRIMARY KEY, logoUrl TEXT, siteName TEXT, siteTitle TEXT, siteDescription TEXT, siteKeywords TEXT, footerText TEXT)`);
         await turso.execute(`CREATE TABLE IF NOT EXISTS articles (id TEXT PRIMARY KEY, title TEXT, summary TEXT, content TEXT, author TEXT, category TEXT, createdAt TEXT, imageUrl TEXT, isActive INTEGER, displayOptions TEXT, gallery TEXT, tags TEXT)`);
@@ -71,10 +76,13 @@ async function startServer() {
         console.log("Database initialized successfully.");
         return true;
       } catch (err) {
-        console.error(`Database init failed (Attempt ${i + 1}/${retries}):`, err instanceof Error ? err.message : err);
+        console.error(`Database connection failed (Attempt ${i + 1}/${retries}):`, err instanceof Error ? err.message : err);
+        
+        // If it's a DNS error (EAI_AGAIN), we definitely want to retry
         if (i < retries - 1) {
-          console.log(`Waiting ${delay/1000}s before next attempt...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
+          const backoff = delay * (i + 1); // Incremental backoff
+          console.log(`Waiting ${backoff/1000}s before next attempt...`);
+          await new Promise(resolve => setTimeout(resolve, backoff));
         }
       }
     }
@@ -83,7 +91,7 @@ async function startServer() {
 
   const dbReady = await initDb();
   if (!dbReady) {
-    console.error("CRITICAL: Could not connect to database after multiple attempts. Exiting...");
+    console.error("CRITICAL: Could not connect to Turso after multiple attempts. Please check your network and TURSO_DATABASE_URL.");
     process.exit(1);
   }
 
