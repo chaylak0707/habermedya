@@ -10,7 +10,7 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT || 3000;
 
-  // Turso Baglantisi
+  // Turso
   const turso = createClient({
     url: (process.env.TURSO_DATABASE_URL || "").trim(),
     authToken: (process.env.TURSO_AUTH_TOKEN || "").trim(),
@@ -65,16 +65,16 @@ async function startServer() {
   });
 
   /* =========================
-     REACT ROUTER (ÇOK ÖNEMLİ)
+     EN GARANTİLİ ROUTE FIX (HATA VERMEZ)
   ========================= */
-  app.get("*", (req, res) => {
+  app.use((req, res) => {
     const indexPath = path.join(distPath, "index.html");
 
     if (fs.existsSync(indexPath)) {
       return res.sendFile(indexPath);
     }
 
-    res.status(404).send("Build dosyası bulunamadı!");
+    res.status(404).send("Build dosyası yok!");
   });
 
   app.listen(PORT, "0.0.0.0", () => {
