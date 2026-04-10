@@ -1,0 +1,109 @@
+{
+  "entities": {
+    "Article": {
+      "title": "Article",
+      "description": "A news article",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The title of the article" },
+        "summary": { "type": "string", "description": "A short summary of the article" },
+        "content": { "type": "string", "description": "The content of the article" },
+        "author": { "type": "string", "description": "The author of the article" },
+        "category": { "type": "string", "description": "The category of the article" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "The creation date" },
+        "imageUrl": { "type": "string", "description": "The URL of the article image" },
+        "isActive": { "type": "boolean", "description": "Whether the article is visible" },
+        "displayOptions": {
+          "type": "object",
+          "properties": {
+            "isSlider": { "type": "boolean" },
+            "isFeatured": { "type": "boolean" },
+            "isCategory": { "type": "boolean" },
+            "isSidebar": { "type": "boolean" }
+          }
+        }
+      },
+      "required": ["title", "content", "author", "category", "createdAt"]
+    },
+    "Ad": {
+      "title": "Ad",
+      "description": "Advertisement configuration",
+      "type": "object",
+      "properties": {
+        "imageUrl": { "type": "string" },
+        "adCode": { "type": "string" },
+        "link": { "type": "string" },
+        "type": { "type": "string", "enum": ["image", "code"] }
+      }
+    },
+    "Category": {
+      "title": "Category",
+      "description": "A news category",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the category" },
+        "showInMenu": { "type": "boolean", "description": "Whether to show in the menu" },
+        "color": { "type": "string", "description": "The color of the category" }
+      },
+      "required": ["name", "showInMenu", "color"]
+    },
+    "User": {
+      "title": "User",
+      "description": "A user of the system",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the user" },
+        "email": { "type": "string", "description": "The email of the user" },
+        "role": { "type": "string", "enum": ["admin", "user"], "description": "The role of the user" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "SiteConfig": {
+      "title": "SiteConfig",
+      "description": "Site configuration settings",
+      "type": "object",
+      "properties": {
+        "logoUrl": { "type": "string", "description": "The URL of the site logo" },
+        "siteName": { "type": "string", "description": "The name of the site" }
+      },
+      "required": ["logoUrl"]
+    },
+    "GalleryImage": {
+      "title": "GalleryImage",
+      "description": "An image in the photo gallery",
+      "type": "object",
+      "properties": {
+        "url": { "type": "string", "description": "The URL or base64 of the image" },
+        "caption": { "type": "string", "description": "A caption for the image" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "The creation date" }
+      },
+      "required": ["url", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/articles/{articleId}": {
+      "schema": "Article",
+      "description": "Collection of articles"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Collection of categories"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of users"
+    },
+    "/config/site": {
+      "schema": "SiteConfig",
+      "description": "Site configuration"
+    },
+    "/ads/{adId}": {
+      "schema": "Ad",
+      "description": "Advertisement configurations"
+    },
+    "/gallery/{imageId}": {
+      "schema": "GalleryImage",
+      "description": "Collection of gallery images"
+    }
+  }
+}
