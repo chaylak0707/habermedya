@@ -36,64 +36,64 @@ async function startServer() {
 
   console.log("Starting server in", process.env.NODE_ENV, "mode...");
 
-  // Validate critical environment variables
+  // --- VERİTABANI BAĞLANTISI (Turso / LibSQL) ---
   const dbUrl = String(process.env.TURSO_DATABASE_URL || "").trim();
   const dbToken = String(process.env.TURSO_AUTH_TOKEN || "").trim();
 
-  if (!dbUrl || dbUrl === "") {
-    console.error("CRITICAL ERROR: TURSO_DATABASE_URL is not set or empty.");
+  if (!dbUrl) {
+    console.error("KRİTİK HATA: TURSO_DATABASE_URL çevre değişkeni ayarlanmamış.");
     process.exit(1);
   }
 
-  console.log(`Connecting to Turso at: ${dbUrl.split('.io')[0]}.io...`);
+  console.log(`Bağlantı kuruluyor: ${dbUrl.split('.io')[0]}.io`);
 
-  // Turso client using native fetch (Node 22+)
-  // We pass globalThis.fetch explicitly to ensure no polyfill conflicts
+  // Node 22+ için en güncel ve yerleşik fetch kullanan istemci yapılandırması
   const turso = createClient({
     url: dbUrl,
     authToken: dbToken,
-    fetch: globalThis.fetch,
+    fetch: globalThis.fetch // Çakışmaları önlemek için yerleşik fetch'i açıkça belirtiyoruz
   });
 
-  // Retry logic for database initialization
-  const initDb = async (retries = 5, delay = 5000) => {
-    // Initial delay to let Render's network interface fully initialize
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    for (let i = 0; i < retries; i++) {
+  // Render.com ağ gecikmeleri için geliştirilmiş bağlantı kontrolü
+  const initializeDatabase = async (maxRetries = 5) => {
+    // İlk denemeden önce ağın oturması için kısa bir bekleme
+    await new Promise(res => setTimeout(res, 2000));
+
+    for (let i = 0; i < maxRetries; i++) {
       try {
-        console.log(`Database initialization attempt ${i + 1}...`);
-        // Simple ping to test connection
+        if (i > 0) console.log(`Bağlantı tekrar deneniyor... (${i + 1}/${maxRetries})`);
+        
+        // Bağlantı testi
         await turso.execute("SELECT 1");
         
-        // Initialize database schema
+        // Tablo oluşturma işlemleri
         await turso.execute(`CREATE TABLE IF NOT EXISTS config (id TEXT PRIMARY KEY, logoUrl TEXT, siteName TEXT, siteTitle TEXT, siteDescription TEXT, siteKeywords TEXT, footerText TEXT)`);
         await turso.execute(`CREATE TABLE IF NOT EXISTS articles (id TEXT PRIMARY KEY, title TEXT, summary TEXT, content TEXT, author TEXT, category TEXT, createdAt TEXT, imageUrl TEXT, isActive INTEGER, displayOptions TEXT, gallery TEXT, tags TEXT)`);
         await turso.execute(`CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, name TEXT, color TEXT, showOnHomepage INTEGER, showInMenu INTEGER, isActive INTEGER DEFAULT 1)`);
         await turso.execute(`CREATE TABLE IF NOT EXISTS companies (id TEXT PRIMARY KEY, name TEXT, category TEXT, authorizedPerson TEXT, phone TEXT, whatsapp TEXT, address TEXT, district TEXT, website TEXT, description TEXT, logo TEXT, isApproved INTEGER DEFAULT 0, createdAt TEXT)`);
         await turso.execute(`CREATE TABLE IF NOT EXISTS menus (id TEXT PRIMARY KEY, title TEXT, url TEXT, "order" INTEGER, is_active INTEGER DEFAULT 1, parent_id TEXT)`);
         
-        console.log("Database initialized successfully.");
+        console.log("Veritabanı bağlantısı ve şema kontrolü başarılı.");
         return true;
-      } catch (err) {
-        console.error(`Database connection failed (Attempt ${i + 1}/${retries}):`, err instanceof Error ? err.message : err);
+      } catch (err: any) {
+        console.error(`Bağlantı denemesi başarısız: ${err.message}`);
         
-        // If it's a DNS error (EAI_AGAIN), we definitely want to retry
-        if (i < retries - 1) {
-          const backoff = delay * (i + 1); // Incremental backoff
-          console.log(`Waiting ${backoff/1000}s before next attempt...`);
-          await new Promise(resolve => setTimeout(resolve, backoff));
+        // DNS hatası (EAI_AGAIN) durumunda bekleme süresini artırarak tekrar dene
+        if (i < maxRetries - 1) {
+          const waitTime = 3000 * (i + 1);
+          console.log(`${waitTime/1000} saniye sonra tekrar denenecek...`);
+          await new Promise(res => setTimeout(res, waitTime));
         }
       }
     }
     return false;
   };
 
-  const dbReady = await initDb();
-  if (!dbReady) {
-    console.error("CRITICAL: Could not connect to Turso after multiple attempts. Please check your network and TURSO_DATABASE_URL.");
+  if (!(await initializeDatabase())) {
+    console.error("KRİTİK HATA: Veritabanına bağlanılamadı. Lütfen Render Dashboard üzerinden TURSO_DATABASE_URL ve TURSO_AUTH_TOKEN değerlerini kontrol edin.");
     process.exit(1);
   }
+  // --- BAĞLANTI SONU ---
 
   // Migration: Add SEO columns to config if they don't exist
   try {
