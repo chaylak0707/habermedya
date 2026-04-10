@@ -1,5 +1,11 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { db } from './db';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -46,59 +52,49 @@ function AppContent({ data }: { data: any }) {
 }
 
 export default function App() {
-  const [data, setData] = useState({
-    logoUrl: '',
-    siteName: '',
-    footerText: '',
-    articles: [],
-    categories: [],
-    menus: []
-  });
-
+  const [data, setData] = useState({ logoUrl: '', siteName: '', articles: [], categories: [], menus: [] });
   const [isReady, setIsReady] = useState(false);
 
   const fetchData = async () => {
     try {
-      console.log("Fetching config...");
-      const configRes = await fetch('/api/config');
-      const configData = await configRes.json();
+      const configResult = await db.execute("SELECT * FROM config WHERE id = 'site'");
+      const configData = (configResult.rows[0] || {}) as any;
+      console.log("Config fetched.");
 
       console.log("Fetching articles...");
       const articlesData = await fetchWithCache('articles', 'articles');
+      console.log("Articles fetched.");
 
       console.log("Fetching categories...");
       const categoriesData = await fetchWithCache('categories', 'categories');
+      console.log("Categories fetched.");
 
       console.log("Fetching menus...");
-      const menusRes = await fetch('/api/menus');
-      const menusData = await menusRes.json();
+      const menusResponse = await fetch('/api/menus');
+      const menusData = await menusResponse.json();
+      console.log("Menus fetched.");
+      
+      console.log("Fetched initial data successfully.");
 
       setData({
-        logoUrl: configData.logoUrl || '',
-        siteName: configData.siteName || 'DİNÇ SIHHİ TESİSAT',
-        footerText: configData.footerText || '',
-        articles: (articlesData || []).map((a: any) => ({
-          ...a,
-          isActive: !!a.isActive,
-          displayOptions: typeof a.displayOptions === 'string'
-            ? JSON.parse(a.displayOptions)
-            : a.displayOptions
+        logoUrl: (configData.logoUrl as string) || '',
+        siteName: (configData.siteName as string) || 'DİNÇ SIHHİ TESİSAT',
+        footerText: (configData.footerText as string) || '© 2026 DİNÇ SIHHİ TESİSAT. Tüm hakları saklıdır.',
+        articles: (articlesData as any[]).map(article => ({
+          ...article,
+          isActive: !!article.isActive,
+          displayOptions: typeof article.displayOptions === 'string' ? JSON.parse(article.displayOptions) : article.displayOptions
         })),
-        categories: (categoriesData || []).map((c: any) => ({
-          ...c,
-          name: c.name || '',
-          showInMenu: !!c.showInMenu,
-          showOnHomepage: !!c.showOnHomepage,
-          isActive: c.isActive === undefined ? true : !!c.isActive
+        categories: (categoriesData as any[]).map(cat => ({
+          ...cat,
+          showInMenu: !!cat.showInMenu,
+          showOnHomepage: !!cat.showOnHomepage,
+          isActive: cat.isActive === undefined ? true : !!cat.isActive
         })),
-        menus: (menusData || []).map((m: any) => ({
-          ...m,
-          name: m.name || ''
-        }))
+        menus: Array.isArray(menusData) ? menusData : []
       });
-
-    } catch (error) {
-      console.error("DATA ERROR:", error);
+    } catch (error: any) {
+      console.error("Error fetching initial data:", error);
     } finally {
       setIsReady(true);
     }
