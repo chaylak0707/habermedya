@@ -37,21 +37,21 @@ async function startServer() {
   console.log("Starting server in", process.env.NODE_ENV, "mode...");
 
   // Validate critical environment variables
-  const dbUrl = process.env.TURSO_DATABASE_URL?.trim();
-  const dbToken = process.env.TURSO_AUTH_TOKEN?.trim();
+  const dbUrl = String(process.env.TURSO_DATABASE_URL || "").trim();
+  const dbToken = String(process.env.TURSO_AUTH_TOKEN || "").trim();
 
-  if (!dbUrl) {
-    console.error("CRITICAL ERROR: TURSO_DATABASE_URL is not set.");
+  if (!dbUrl || dbUrl === "") {
+    console.error("CRITICAL ERROR: TURSO_DATABASE_URL is not set or empty.");
     process.exit(1);
   }
 
   console.log(`Connecting to Turso at: ${dbUrl.split('.io')[0]}.io...`);
 
   // Turso client using native fetch (Node 22+)
+  // We pass globalThis.fetch explicitly to ensure no polyfill conflicts
   const turso = createClient({
     url: dbUrl,
-    authToken: dbToken || "",
-    // Explicitly use global fetch to avoid cross-fetch or other polyfills
+    authToken: dbToken,
     fetch: globalThis.fetch,
   });
 
