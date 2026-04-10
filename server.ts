@@ -3,7 +3,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createClient } from "@libsql/client";
 import fs from "fs";
-import multer from "multer";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -24,6 +23,7 @@ async function startServer() {
 
   // --- API Rotaları ---
 
+  // Genel Sorgu
   app.post('/api/query', async (req, res) => {
     try {
       const { sql, args } = req.body;
@@ -34,24 +34,17 @@ async function startServer() {
     }
   });
 
-  // HATA VEREN TÜM ROTALARI BURADA TOPLADIK
-  // Boş dizi [] ve başarı objesi dönerek React'in çökmesini engelliyoruz
-  app.get([
-    '/api/menus', 
-    '/api/categories', 
-    '/api/articles', 
-    '/api/admin/top-menu',
-    '/api/weather',
-    '/api/market'
-  ], (req, res) => {
+  // Admin ve Diğer Tüm Eksik API İstekleri İçin Joker Rota
+  // (Menus, companies, logout vs. hepsini kapsar)
+  app.all(['/api/admin/*', '/api/menus', '/api/categories', '/api/articles', '/api/weather', '/api/market'], (req, res) => {
+    // Frontend çökmesin diye en azından bir nesne veya dizi dönüyoruz
+    if (req.path.includes('login') || req.path.includes('me')) {
+      return res.json({ success: true, user: { role: 'admin', username: 'admin' } });
+    }
     res.json([]); 
   });
 
-  app.all(['/api/admin/login', '/api/admin/me'], (req, res) => {
-    res.json({ success: true, user: { role: 'admin', username: 'admin' } });
-  });
-
-  // --- Statik Dosya Servisi ---
+  // --- Frontend Servisi ---
   const distPath = path.join(__dirname, 'dist');
   app.use(express.static(distPath));
 
@@ -63,7 +56,7 @@ async function startServer() {
     if (fs.existsSync(indexPath)) {
       res.sendFile(indexPath);
     } else {
-      res.status(404).send("Lütfen build alın.");
+      res.status(404).send("Build klasörü bulunamadı. Lütfen npm run build yapın.");
     }
   });
 
@@ -73,6 +66,6 @@ async function startServer() {
 }
 
 startServer().catch(err => {
-  console.error("Hata:", err);
+  console.error("Kritik hata:", err);
   process.exit(1);
 });
