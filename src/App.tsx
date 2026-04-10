@@ -1,138 +1,49 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+import React, { useEffect, useState } from "react";
 
-import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { db } from './db';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import Home from './pages/Home';
-import Admin from './pages/Admin';
-import NewsDetail from './pages/NewsDetail';
-import CategoryPage from './pages/CategoryPage';
-import StockMarket from './pages/StockMarket';
-import DutyPharmacies from './pages/DutyPharmacies';
-import Weather from './pages/Weather';
-import PrayerTimes from './pages/PrayerTimes';
-import TrafficStatus from './pages/TrafficStatus';
-import MatchResults from './pages/MatchResults';
-import Directory from './pages/Directory';
-import AddCompany from './pages/AddCompany';
-import { AppDataContext } from './AppDataContext';
-import { fetchWithCache } from './lib/utils';
+type Category = {
+  id: number;
+  name?: string;
+  slug?: string;
+};
 
-function AppContent({ data }: { data: any }) {
-  const location = useLocation();
-  const isAdminPage = location.pathname.startsWith('/admin');
-
-  return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      {!isAdminPage && <Header />}
-      <main className={isAdminPage ? "flex-1" : "max-w-[1280px] mx-auto px-2 sm:px-4 py-4 sm:py-8 flex-1"}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/news/:id" element={<NewsDetail onReady={() => {}} />} />
-          <Route path="/category/:slug" element={<CategoryPage />} />
-          <Route path="/servis/borsa" element={<StockMarket />} />
-          <Route path="/servis/nobetci-ezcaneler" element={<DutyPharmacies />} />
-          <Route path="/servis/hava-durumu" element={<Weather />} />
-          <Route path="/servis/namaz-vakitleri" element={<PrayerTimes />} />
-          <Route path="/servis/trafik-durumu" element={<TrafficStatus />} />
-          <Route path="/servis/mac-sonuclari" element={<MatchResults />} />
-          <Route path="/rehber" element={<Directory />} />
-          <Route path="/rehber/firma-ekle" element={<AddCompany />} />
-        </Routes>
-      </main>
-      {!isAdminPage && <Footer />}
-    </div>
-  );
-}
+type Menu = {
+  id: number;
+  name?: string;
+};
 
 export default function App() {
-  const [data, setData] = useState({
-    logoUrl: '',
-    siteName: '',
-    articles: [],
-    categories: [],
-    menus: []
-  });
-
-  const [isReady, setIsReady] = useState(false);
-
-  const fetchData = async () => {
-    try {
-      const configResult = await db.execute("SELECT * FROM config WHERE id = 'site'");
-      const configData = (configResult.rows[0] || {}) as any;
-      console.log("Config fetched.");
-
-      console.log("Fetching articles...");
-      const articlesData = (await fetchWithCache('articles', 'articles')) || [];
-      console.log("Articles fetched.");
-
-      console.log("Fetching categories...");
-      const categoriesData = (await fetchWithCache('categories', 'categories')) || [];
-      console.log("Categories fetched.");
-
-      console.log("Fetching menus...");
-      const menusResponse = await fetch('/api/menus');
-      const menusData = (await menusResponse.json()) || [];
-      console.log("Menus fetched.");
-
-      console.log("Fetched initial data successfully.");
-
-      setData({
-        logoUrl: (configData?.logoUrl as string) || '',
-        siteName: (configData?.siteName as string) || 'DİNÇ SIHHİ TESİSAT',
-        footerText: (configData?.footerText as string) || '© 2026 DİNÇ SIHHİ TESİSAT. Tüm hakları saklıdır.',
-
-        articles: (Array.isArray(articlesData) ? articlesData : []).map((article: any) => ({
-          ...article,
-          title: article?.title || "",
-          name: article?.name || "",
-          slug: article?.slug || "",
-          isActive: !!article?.isActive,
-          displayOptions:
-            typeof article?.displayOptions === 'string'
-              ? JSON.parse(article.displayOptions)
-              : article?.displayOptions || {}
-        })),
-
-        categories: (Array.isArray(categoriesData) ? categoriesData : []).map((cat: any) => ({
-          ...cat,
-          name: cat?.name || "",
-          title: cat?.title || "",
-          slug: cat?.slug || "",
-          showInMenu: !!cat?.showInMenu,
-          showOnHomepage: !!cat?.showOnHomepage,
-          isActive: cat?.isActive === undefined ? true : !!cat?.isActive
-        })),
-
-        menus: Array.isArray(menusData) ? menusData : []
-      });
-
-    } catch (error: any) {
-      console.error("Error fetching initial data:", error);
-    } finally {
-      setIsReady(true);
-    }
-  };
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [menus, setMenus] = useState<Menu[]>([]);
 
   useEffect(() => {
-    fetchData();
+    fetch("/api/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        setCategories(data || []);
+      });
+
+    fetch("/api/menus")
+      .then((res) => res.json())
+      .then((data) => {
+        setMenus(data || []);
+      });
   }, []);
 
-  if (!isReady) {
-    return <div className="min-h-screen bg-white"></div>;
-  }
-
   return (
-    <AppDataContext.Provider value={{ ...data, refreshData: fetchData }}>
-      <Router>
-        <AppContent data={data} />
-      </Router>
-    </AppDataContext.Provider>
+    <div>
+      <h2>Kategoriler</h2>
+      {categories.map((cat) => (
+        <div key={cat.id}>
+          {(cat.name || "GENEL").toUpperCase()}
+        </div>
+      ))}
+
+      <h2>Menüler</h2>
+      {menus.map((menu) => (
+        <div key={menu.id}>
+          {(menu.name || "MENÜ").toUpperCase()}
+        </div>
+      ))}
+    </div>
   );
 }
