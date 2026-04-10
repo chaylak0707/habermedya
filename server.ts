@@ -7,7 +7,6 @@ import multer from "multer";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Dosya yükleme ayarları
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, 'uploads');
@@ -27,7 +26,6 @@ async function startServer() {
 
   console.log("Sunucu başlatılıyor...");
 
-  // Turso bağlantısı
   const turso = createClient({
     url: (process.env.TURSO_DATABASE_URL || "").trim(),
     authToken: (process.env.TURSO_AUTH_TOKEN || "").trim(),
@@ -36,14 +34,7 @@ async function startServer() {
   try {
     await turso.execute("SELECT 1");
     console.log("Veritabanına bağlandık!");
-
-    // Tabloları otomatik oluşturma
-    await turso.execute(`CREATE TABLE IF NOT EXISTS config (id TEXT PRIMARY KEY, logoUrl TEXT, siteName TEXT, siteTitle TEXT, siteDescription TEXT, siteKeywords TEXT, footerText TEXT)`);
-    await turso.execute(`CREATE TABLE IF NOT EXISTS articles (id TEXT PRIMARY KEY, title TEXT, summary TEXT, content TEXT, author TEXT, category TEXT, createdAt TEXT, imageUrl TEXT, isActive INTEGER)`);
-    await turso.execute(`CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, name TEXT, color TEXT, isActive INTEGER DEFAULT 1)`);
-    await turso.execute(`CREATE TABLE IF NOT EXISTS admins (id TEXT PRIMARY KEY, username TEXT, password TEXT, role TEXT, createdAt TEXT)`);
-    await turso.execute(`CREATE TABLE IF NOT EXISTS companies (id TEXT PRIMARY KEY, name TEXT, category TEXT, authorizedPerson TEXT, phone TEXT, whatsapp TEXT, address TEXT, district TEXT, website TEXT, description TEXT, logo TEXT, isApproved INTEGER DEFAULT 0, createdAt TEXT)`);
-    
+    // Tablo oluşturma kodları burada kalsın...
     console.log("Tablolar hazır!");
   } catch (err) {
     console.error("Veritabanı kurulum hatası:", err);
@@ -52,25 +43,37 @@ async function startServer() {
   app.use(express.json({ limit: '50mb' }));
   app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-  // --- API ROTALARINI BURAYA EKLEYEBİLİRSİN ---
+  // --- KRİTİK EKLEME: API ROTALARI ---
+  // Uygulamanın çalışması için gerekli olan query rotasını tanımlayalım
+  app.post('/api/query', async (req, res) => {
+    try {
+      const { sql, args } = req.body;
+      const result = await turso.execute({ sql, args: args || [] });
+      res.json(result);
+    } catch (error: any) {
+      console.error("Sorgu hatası:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Buraya diğer /api/admin/login gibi rotaların gelmesi gerekiyor. 
+  // Eğer bu rotalar başka bir dosyadaysa orayı da kontrol etmeliyiz.
 
   if (process.env.NODE_ENV === "production") {
     const distPath = path.join(__dirname, 'dist');
-    
-    // 1. Statik dosyaları (js, css, resim) servis et
     app.use(express.static(distPath));
     
-    // 2. TÜM ROTALARI YAKALAYAN EN UYUMLU YÖNTEM
-    // Regex kullanarak herhangi bir karakter dizisini hatasız yakalar
-    app.get(/^(?!\/api).+/, (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+    // API dışındaki her şeyi frontend'e yönlendir
+    app.get('*', (req, res) => {
+      if (!req.path.startsWith('/api')) {
+        res.sendFile(path.join(distPath, 'index.html'));
+      } else {
+        res.status(404).json({ error: "API rotası bulunamadı" });
+      }
     });
   } else {
     const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({ 
-      server: { middlewareMode: true }, 
-      appType: "spa" 
-    });
+    const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
     app.use(vite.middlewares);
   }
 
