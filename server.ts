@@ -43,21 +43,58 @@ async function startServer() {
   });
 
   /* =========================
-     FAKE API (çökmesin diye)
+     FAKE API (frontend çökmesin)
   ========================= */
   app.use("/api", (req, res) => {
     const url = req.url;
 
+    // CATEGORIES
     if (url.includes("categories")) {
       return res.json([
-        { id: 1, name: "Genel", slug: "genel", isActive: 1 },
+        {
+          id: 1,
+          name: "Genel",
+          slug: "genel",
+          title: "Genel",
+          description: "Genel kategori",
+          isActive: 1,
+        },
       ]);
     }
 
+    // MENUS
+    if (url.includes("menus")) {
+      return res.json([
+        {
+          id: 1,
+          name: "Ana Menü",
+          slug: "ana-menu",
+          items: [],
+        },
+      ]);
+    }
+
+    // ARTICLES
+    if (url.includes("articles")) {
+      return res.json([
+        {
+          id: 1,
+          title: "Demo içerik",
+          slug: "demo",
+          content: "Test içerik",
+        },
+      ]);
+    }
+
+    // LOGIN / ME
     if (url.includes("login") || url.includes("me")) {
       return res.json({
         success: true,
-        user: { role: "admin" },
+        user: {
+          id: 1,
+          name: "Admin",
+          role: "admin",
+        },
       });
     }
 
@@ -65,7 +102,7 @@ async function startServer() {
   });
 
   /* =========================
-     EN GARANTİLİ ROUTE FIX (HATA VERMEZ)
+     REACT ROUTER FIX (EN GARANTİLİ)
   ========================= */
   app.use((req, res) => {
     const indexPath = path.join(distPath, "index.html");
