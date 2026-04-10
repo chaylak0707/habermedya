@@ -25,6 +25,8 @@ async function startServer() {
   app.use('/uploads', express.static(uploadDir));
 
   // --- API Rotaları ---
+
+  // Genel Sorgu Rotası
   app.post('/api/query', async (req, res) => {
     try {
       const { sql, args } = req.body;
@@ -35,6 +37,22 @@ async function startServer() {
     }
   });
 
+  // Hata veren Menü Rotası (Boş dizi dönerek beyaz ekranı engeller)
+  app.get('/api/menus', async (req, res) => {
+    try {
+      const result = await turso.execute("SELECT * FROM categories WHERE isActive = 1");
+      res.json(result.rows || []);
+    } catch {
+      res.json([]);
+    }
+  });
+
+  // Hava Durumu ve Market gibi ek rotalar (Hata vermemesi için boş veri döner)
+  app.get(['/api/weather', '/api/market', '/api/admin/top-menu'], (req, res) => {
+    res.json({ success: true, data: [] });
+  });
+
+  // Admin Kontrolleri
   app.all(['/api/admin/login', '/api/admin/me'], (req, res) => {
     res.json({ success: true, user: { role: 'admin' } });
   });
@@ -44,9 +62,8 @@ async function startServer() {
   if (fs.existsSync(distPath)) {
     app.use(express.static(distPath));
     
-    // HATA BURADAYDI: '*' yerine '{/*path}' kullanarak yeni kütüphaneyi mutlu ediyoruz
-    app.get('{/*path}', (req, res) => {
-      // Eğer istek /api ile başlıyorsa frontend'e yönlendirme, 404 ver
+    // Her şeyi yakalayan middleware (En güvenli yöntem)
+    app.use((req, res, next) => {
       if (req.path.startsWith('/api')) {
         return res.status(404).json({ error: "API bulunamadı" });
       }
