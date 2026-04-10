@@ -4,58 +4,52 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { createClient } from "@libsql/client";
 
-// __dirname fix
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// TURSO
-const turso = createClient({
-  url: process.env.TURSO_DATABASE_URL || "",
-  authToken: process.env.TURSO_AUTH_TOKEN || "",
-});
-
 app.use(express.json());
 
-// dist
+// TURSO
+const db = createClient({
+  url: process.env.TURSO_DATABASE_URL!,
+  authToken: process.env.TURSO_AUTH_TOKEN!,
+});
+
+// STATIC
 const distPath = path.join(__dirname, "dist");
 app.use(express.static(distPath));
 
-/* =========================
-   API
-========================= */
+/* ================= API ================= */
 
-// ✅ CONFIG (EKLEDİM)
+// CONFIG
 app.get("/api/config", async (req, res) => {
   try {
-    const result = await turso.execute("SELECT * FROM config WHERE id = 'site'");
-    res.json(result.rows[0] || {});
+    const r = await db.execute("SELECT * FROM config LIMIT 1");
+    res.json(r.rows[0] || {});
   } catch (e) {
-    console.error("config error:", e);
     res.json({});
   }
 });
 
-// KATEGORİLER
+// CATEGORIES
 app.get("/api/categories", async (req, res) => {
   try {
-    const result = await turso.execute("SELECT * FROM categories");
-    res.json(result.rows || []);
-  } catch (e) {
-    console.error("categories error:", e);
+    const r = await db.execute("SELECT * FROM categories");
+    res.json(r.rows || []);
+  } catch {
     res.json([]);
   }
 });
 
-// MENÜLER
+// MENUS
 app.get("/api/menus", async (req, res) => {
   try {
-    const result = await turso.execute("SELECT * FROM menus");
-    res.json(result.rows || []);
-  } catch (e) {
-    console.error("menus error:", e);
+    const r = await db.execute("SELECT * FROM menus");
+    res.json(r.rows || []);
+  } catch {
     res.json([]);
   }
 });
@@ -63,39 +57,48 @@ app.get("/api/menus", async (req, res) => {
 // ARTICLES
 app.get("/api/articles", async (req, res) => {
   try {
-    const result = await turso.execute("SELECT * FROM articles");
-    res.json(result.rows || []);
-  } catch (e) {
-    console.error("articles error:", e);
+    const r = await db.execute("SELECT * FROM articles");
+    res.json(r.rows || []);
+  } catch {
     res.json([]);
   }
 });
 
-// TEST
-app.get("/api/test-db", async (req, res) => {
+/* 🔥 EKLEDİM */
+
+// QUERY (frontend bunu kullanıyor)
+app.post("/api/query", async (req, res) => {
   try {
-    const result = await turso.execute("SELECT 1");
-    res.json({ ok: true, result });
+    const { sql } = req.body;
+
+    if (!sql) {
+      return res.status(400).json({ error: "sql yok" });
+    }
+
+    const r = await db.execute(sql);
+    res.json({ rows: r.rows });
   } catch (e: any) {
-    res.json({ ok: false, error: e.message });
+    res.status(500).json({ error: e.message });
   }
 });
 
-/* =========================
-   FRONTEND
-========================= */
+// ADMIN LOGIN (fake basit giriş)
+app.post("/api/admin/login", (req, res) => {
+  const { username, password } = req.body;
 
+  if (username === "admin" && password === "admin") {
+    return res.json({ success: true, token: "ok" });
+  }
+
+  res.status(401).json({ success: false });
+});
+
+/* ===================================== */
+
+// FRONTEND
 app.get(/.*/, (req, res) => {
-  const indexPath = path.join(__dirname, "dist", "index.html");
-
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    res.status(500).send("dist klasörü yok");
-  }
+  res.sendFile(path.join(distPath, "index.html"));
 });
-
-/* ========================= */
 
 app.listen(PORT, () => {
   console.log("Server çalışıyor:", PORT);
