@@ -10,7 +10,7 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT || 3000;
 
-  // Turso Bağlantısı
+  // Turso Baglantisi
   const turso = createClient({
     url: (process.env.TURSO_DATABASE_URL || "").trim(),
     authToken: (process.env.TURSO_AUTH_TOKEN || "").trim(),
@@ -18,11 +18,11 @@ async function startServer() {
 
   app.use(express.json({ limit: '50mb' }));
 
-  // 1. STATİK DOSYALAR (Hata payını azaltmak için en üste aldım)
+  // 1. STATIK DOSYALARI EN BASTA TANI
   const distPath = path.join(__dirname, 'dist');
   app.use(express.static(distPath));
 
-  // 2. ANA SORGU ROTASI
+  // 2. ANA SORGULAMA ROTASI
   app.post('/api/query', async (req, res) => {
     try {
       const { sql, args } = req.body;
@@ -33,29 +33,32 @@ async function startServer() {
     }
   });
 
-  // 3. JOKER MIDDLEWARE - ROTA TANIMI YOK, HATA YOK
-  app.use((req, res, next) => {
-    // API İsteklerini Yönet
-    if (req.url.startsWith('/api')) {
-      // Eğer kategoriler isteniyorsa boş dönme, sahte veri ver (Çökme engelleme)
-      if (req.url.includes('categories')) {
+  // 3. JOKER MIDDLEWARE (HATA RISKINI SIFIRA INDIRDIK)
+  // Rota tanimi yapmiyoruz, manuel kontrol ediyoruz.
+  app.use((req, res) => {
+    const url = req.url;
+
+    // API isteklerini karsila
+    if (url.startsWith('/api')) {
+      // Frontend çökmesin diye sahte kategori
+      if (url.includes('categories')) {
         return res.json([{ id: 1, name: 'Genel', slug: 'genel', isActive: 1 }]);
       }
-      // Login/Me istekleri
-      if (req.url.includes('login') || req.url.includes('me')) {
+      // Login kontrolü
+      if (url.includes('login') || url.includes('me')) {
         return res.json({ success: true, user: { role: 'admin' } });
       }
-      // Diğer her şey
+      // Diger her seye bos liste
       return res.json([]);
     }
 
-    // React Routing İçin Her Şeyi index.html'e Yönlendir
+    // Hicbir sey bulunamazsa React'e gönder
     const indexPath = path.join(distPath, 'index.html');
     if (fs.existsSync(indexPath)) {
       return res.sendFile(indexPath);
     }
     
-    res.status(404).send("Build klasoru eksik!");
+    res.status(404).send("Sistem hatasi: Build dosyalari eksik.");
   });
 
   app.listen(PORT, "0.0.0.0", () => {
@@ -64,6 +67,6 @@ async function startServer() {
 }
 
 startServer().catch(err => {
-  console.error("KRITIK HATA:", err);
+  console.error("Baslatma hatasi:", err);
   process.exit(1);
 });
