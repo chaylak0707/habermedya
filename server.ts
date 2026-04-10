@@ -4,7 +4,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { createClient } from "@libsql/client";
 
-// __dirname fix (zorunlu)
+// __dirname fix
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -19,7 +19,7 @@ const turso = createClient({
 
 app.use(express.json());
 
-// dist yolu
+// dist
 const distPath = path.join(__dirname, "dist");
 app.use(express.static(distPath));
 
@@ -27,6 +27,18 @@ app.use(express.static(distPath));
    API
 ========================= */
 
+// ✅ CONFIG (EKLEDİM)
+app.get("/api/config", async (req, res) => {
+  try {
+    const result = await turso.execute("SELECT * FROM config WHERE id = 'site'");
+    res.json(result.rows[0] || {});
+  } catch (e) {
+    console.error("config error:", e);
+    res.json({});
+  }
+});
+
+// KATEGORİLER
 app.get("/api/categories", async (req, res) => {
   try {
     const result = await turso.execute("SELECT * FROM categories");
@@ -37,6 +49,7 @@ app.get("/api/categories", async (req, res) => {
   }
 });
 
+// MENÜLER
 app.get("/api/menus", async (req, res) => {
   try {
     const result = await turso.execute("SELECT * FROM menus");
@@ -47,6 +60,7 @@ app.get("/api/menus", async (req, res) => {
   }
 });
 
+// ARTICLES
 app.get("/api/articles", async (req, res) => {
   try {
     const result = await turso.execute("SELECT * FROM articles");
