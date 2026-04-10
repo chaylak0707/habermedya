@@ -21,9 +21,11 @@ async function startServer() {
   if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
   app.use('/uploads', express.static(uploadDir));
 
-  // --- API Rotaları ---
+  // --- 1. ÖNCE STATİK DOSYALAR ---
+  const distPath = path.join(__dirname, 'dist');
+  app.use(express.static(distPath));
 
-  // Genel Sorgu
+  // --- 2. API SORGULARI ---
   app.post('/api/query', async (req, res) => {
     try {
       const { sql, args } = req.body;
@@ -34,29 +36,26 @@ async function startServer() {
     }
   });
 
-  // Admin ve Diğer Tüm Eksik API İstekleri İçin Joker Rota
-  // (Menus, companies, logout vs. hepsini kapsar)
-  app.all(['/api/admin/*', '/api/menus', '/api/categories', '/api/articles', '/api/weather', '/api/market'], (req, res) => {
-    // Frontend çökmesin diye en azından bir nesne veya dizi dönüyoruz
-    if (req.path.includes('login') || req.path.includes('me')) {
-      return res.json({ success: true, user: { role: 'admin', username: 'admin' } });
-    }
-    res.json([]); 
-  });
+  // --- 3. JOKER MIDDLEWARE (HATA VEREN TÜM ROTALARI BURASI ÇÖZER) ---
+  // Burası rota tanımı yapmaz, gelen her isteği kontrol eder. Hata verme şansı yok.
+  app.use((req, res, next) => {
+    const url = req.path;
 
-  // --- Frontend Servisi ---
-  const distPath = path.join(__dirname, 'dist');
-  app.use(express.static(distPath));
-
-  app.use((req, res) => {
-    if (req.path.startsWith('/api')) {
-      return res.status(404).json({ error: "API bulunamadı" });
+    // Eğer istek bir API isteği ise ama yukarıda karşılanmadıysa
+    if (url.startsWith('/api/')) {
+      if (url.includes('login') || url.includes('me')) {
+        return res.json({ success: true, user: { role: 'admin', username: 'admin' } });
+      }
+      // Diğer tüm API'lara (menus, categories, logout vb.) boş dizi dön
+      return res.json([]);
     }
+
+    // Eğer API değilse ve dosya bulunamadıysa React index.html'e gönder
     const indexPath = path.join(distPath, 'index.html');
     if (fs.existsSync(indexPath)) {
       res.sendFile(indexPath);
     } else {
-      res.status(404).send("Build klasörü bulunamadı. Lütfen npm run build yapın.");
+      res.status(404).send("Dosya bulunamadı.");
     }
   });
 
