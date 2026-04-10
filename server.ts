@@ -1,9 +1,9 @@
 import express from "express";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createClient } from "@libsql/client";
 import fs from "fs";
+import crypto from "crypto";
 
 import multer from "multer";
 
@@ -32,11 +32,19 @@ const upload = multer({
 
 async function startServer() {
   const app = express();
-  const PORT = process.env.PORT || 3000;
+  const PORT = Number(process.env.PORT) || 3000;
+
+  console.log("Starting server in", process.env.NODE_ENV, "mode...");
+
+  // Validate critical environment variables
+  if (!process.env.TURSO_DATABASE_URL) {
+    console.error("CRITICAL ERROR: TURSO_DATABASE_URL is not set.");
+    process.exit(1);
+  }
 
   // Turso client
   const turso = createClient({
-    url: process.env.TURSO_DATABASE_URL || "",
+    url: process.env.TURSO_DATABASE_URL,
     authToken: process.env.TURSO_AUTH_TOKEN || "",
   });
 
@@ -1274,6 +1282,8 @@ async function startServer() {
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
+    console.log("Initializing Vite middleware...");
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -1321,4 +1331,8 @@ app.listen(PORT, "0.0.0.0", () => {
   });
 }
 
-startServer();
+startServer().catch(err => {
+  console.error("FATAL ERROR DURING SERVER STARTUP:");
+  console.error(err);
+  process.exit(1);
+});
