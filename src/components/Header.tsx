@@ -65,7 +65,7 @@ export default function Header() {
   return (
     <header className="w-full">
       {/* Top Red Bar */}
-      <div className="bg-[#e60026] text-white py-2 text-xs sm:text-sm">
+      <div className="bg-[#e60026] text-white py-2 text-[10px] sm:text-xs">
         <div className="max-w-[1280px] mx-auto flex justify-between items-center px-2 sm:px-4">
           <div className="flex space-x-2 sm:space-x-4">
             {leftLinks.map((link) => (
@@ -101,10 +101,10 @@ export default function Header() {
         <div className="max-w-[1280px] mx-auto flex justify-between items-center py-2 md:py-6 px-2 sm:px-4">
           <Link to="/" className="flex items-center">
             {logoUrl && (
-              <img src={normalizeImageUrl(logoUrl)} alt={siteName} className="w-auto max-h-8 md:max-h-10 object-contain" loading="eager" />
+              <img src={normalizeImageUrl(logoUrl)} alt={siteName} className="w-auto max-h-7 md:max-h-9 object-contain" loading="eager" />
             )}
             {!logoUrl && (
-              <div className="text-xl md:text-2xl font-bold">
+              <div className="text-lg md:text-xl font-bold">
                 <span className="text-gray-600">MEGA</span>
                 <span className="bg-[#e60026] text-white px-2 py-1 ml-1 rounded">HABER</span>
               </div>
@@ -112,7 +112,7 @@ export default function Header() {
           </Link>
           
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex space-x-6 text-[18px] font-bold text-gray-800 font-['Roboto'] items-center">
+          <nav className="hidden lg:flex space-x-6 text-[14px] font-bold text-gray-800 font-['Roboto'] items-center">
             {/* Home Link */}
             {(menus || []).filter(m => m.id === 'home').map((menu: any) => (
               <Link key={menu.id} to={menu.url} className="hover:text-[#e60026]">{menu.title?.toUpperCase()}</Link>

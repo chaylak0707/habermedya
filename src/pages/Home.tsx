@@ -175,7 +175,7 @@ export default function Home() {
                     <span className="px-2 py-1 cat-label font-bold mb-2 inline-block rounded-sm" style={{ backgroundColor: categories.find(c => c.name === (mainArticle?.category || 'SİYASET'))?.color || '#e60026' }}>
                       {mainArticle?.category?.toUpperCase() || 'SİYASET'}
                     </span>
-                    <h1 className="text-lg sm:text-2xl md:text-4xl font-bold mb-2 group-hover:text-red-400 transition-colors line-clamp-2 leading-tight">
+                    <h1 className="text-base sm:text-lg md:text-2xl font-bold mb-2 group-hover:text-red-400 transition-colors line-clamp-2 leading-tight">
                       {mainArticle?.title}
                     </h1>
                     <div className="flex items-center gap-2 text-[10px] md:text-sm opacity-90 font-medium">
