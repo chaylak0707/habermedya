@@ -8,7 +8,7 @@ import multer from "multer";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Dosya yükleme ayarı
+// Dosya yükleme ayarları
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, 'uploads');
@@ -26,7 +26,9 @@ async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
 
-  // Veritabanı bağlantısı
+  console.log("Sunucu başlatılıyor...");
+
+  // Yeni Turso bağlantısı (Render'daki güncel bilgileri kullanır)
   const turso = createClient({
     url: process.env.TURSO_DATABASE_URL?.trim() || "",
     authToken: process.env.TURSO_AUTH_TOKEN?.trim() || "",
@@ -35,25 +37,28 @@ async function startServer() {
   try {
     await turso.execute("SELECT 1");
     console.log("Veritabanına bağlandık!");
-    
-    // TABLOLARI OTOMATİK OLUŞTURAN KISIM BURASI
+
+    // TABLOLARI OTOMATİK OLUŞTURMA (Yeni hesapta tabloları bu kod kendi kuracak)
     await turso.execute(`CREATE TABLE IF NOT EXISTS config (id TEXT PRIMARY KEY, logoUrl TEXT, siteName TEXT, siteTitle TEXT, siteDescription TEXT, siteKeywords TEXT, footerText TEXT)`);
     await turso.execute(`CREATE TABLE IF NOT EXISTS articles (id TEXT PRIMARY KEY, title TEXT, summary TEXT, content TEXT, author TEXT, category TEXT, createdAt TEXT, imageUrl TEXT, isActive INTEGER)`);
     await turso.execute(`CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, name TEXT, color TEXT, isActive INTEGER DEFAULT 1)`);
     await turso.execute(`CREATE TABLE IF NOT EXISTS admins (id TEXT PRIMARY KEY, username TEXT, password TEXT, role TEXT, createdAt TEXT)`);
     await turso.execute(`CREATE TABLE IF NOT EXISTS companies (id TEXT PRIMARY KEY, name TEXT, category TEXT, authorizedPerson TEXT, phone TEXT, whatsapp TEXT, address TEXT, district TEXT, website TEXT, description TEXT, logo TEXT, isApproved INTEGER DEFAULT 0, createdAt TEXT)`);
     
-    console.log("Tablolar kontrol edildi/oluşturuldu.");
+    console.log("Tablolar hazır!");
   } catch (err) {
-    console.error("Hata:", err);
+    console.error("Veritabanı kurulum hatası:", err);
   }
 
   app.use(express.json({ limit: '50mb' }));
 
+  // --- API ROTALARINI BURAYA EKLEYEBİLİRSİN ---
+
   if (process.env.NODE_ENV === "production") {
     const distPath = path.join(__dirname, 'dist');
     app.use(express.static(distPath));
-    // Render hatasını çözen kısım
+    
+    // RENDER HATASINI ÇÖZEN KRİTİK YÖNLENDİRME
     app.get('/:any*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
@@ -68,4 +73,7 @@ async function startServer() {
   });
 }
 
-startServer();
+startServer().catch(err => {
+  console.error("Başlatma hatası:", err);
+  process.exit(1);
+});
