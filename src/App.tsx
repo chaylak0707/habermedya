@@ -52,7 +52,14 @@ function AppContent({ data }: { data: any }) {
 }
 
 export default function App() {
-  const [data, setData] = useState({ logoUrl: '', siteName: '', articles: [], categories: [], menus: [] });
+  const [data, setData] = useState({
+    logoUrl: '',
+    siteName: '',
+    articles: [],
+    categories: [],
+    menus: []
+  });
+
   const [isReady, setIsReady] = useState(false);
 
   const fetchData = async () => {
@@ -62,37 +69,50 @@ export default function App() {
       console.log("Config fetched.");
 
       console.log("Fetching articles...");
-      const articlesData = await fetchWithCache('articles', 'articles');
+      const articlesData = (await fetchWithCache('articles', 'articles')) || [];
       console.log("Articles fetched.");
 
       console.log("Fetching categories...");
-      const categoriesData = await fetchWithCache('categories', 'categories');
+      const categoriesData = (await fetchWithCache('categories', 'categories')) || [];
       console.log("Categories fetched.");
 
       console.log("Fetching menus...");
       const menusResponse = await fetch('/api/menus');
-      const menusData = await menusResponse.json();
+      const menusData = (await menusResponse.json()) || [];
       console.log("Menus fetched.");
-      
+
       console.log("Fetched initial data successfully.");
 
       setData({
-        logoUrl: (configData.logoUrl as string) || '',
-        siteName: (configData.siteName as string) || 'DİNÇ SIHHİ TESİSAT',
-        footerText: (configData.footerText as string) || '© 2026 DİNÇ SIHHİ TESİSAT. Tüm hakları saklıdır.',
-        articles: (articlesData as any[]).map(article => ({
+        logoUrl: (configData?.logoUrl as string) || '',
+        siteName: (configData?.siteName as string) || 'DİNÇ SIHHİ TESİSAT',
+        footerText: (configData?.footerText as string) || '© 2026 DİNÇ SIHHİ TESİSAT. Tüm hakları saklıdır.',
+
+        articles: (Array.isArray(articlesData) ? articlesData : []).map((article: any) => ({
           ...article,
-          isActive: !!article.isActive,
-          displayOptions: typeof article.displayOptions === 'string' ? JSON.parse(article.displayOptions) : article.displayOptions
+          title: article?.title || "",
+          name: article?.name || "",
+          slug: article?.slug || "",
+          isActive: !!article?.isActive,
+          displayOptions:
+            typeof article?.displayOptions === 'string'
+              ? JSON.parse(article.displayOptions)
+              : article?.displayOptions || {}
         })),
-        categories: (categoriesData as any[]).map(cat => ({
+
+        categories: (Array.isArray(categoriesData) ? categoriesData : []).map((cat: any) => ({
           ...cat,
-          showInMenu: !!cat.showInMenu,
-          showOnHomepage: !!cat.showOnHomepage,
-          isActive: cat.isActive === undefined ? true : !!cat.isActive
+          name: cat?.name || "",
+          title: cat?.title || "",
+          slug: cat?.slug || "",
+          showInMenu: !!cat?.showInMenu,
+          showOnHomepage: !!cat?.showOnHomepage,
+          isActive: cat?.isActive === undefined ? true : !!cat?.isActive
         })),
+
         menus: Array.isArray(menusData) ? menusData : []
       });
+
     } catch (error: any) {
       console.error("Error fetching initial data:", error);
     } finally {
