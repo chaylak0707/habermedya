@@ -53,13 +53,40 @@ async function startServer() {
     authToken: dbToken || "",
   });
 
-  // Initialize database schema
-  await turso.execute(`CREATE TABLE IF NOT EXISTS config (id TEXT PRIMARY KEY, logoUrl TEXT, siteName TEXT, siteTitle TEXT, siteDescription TEXT, siteKeywords TEXT, footerText TEXT)`);
-  await turso.execute(`CREATE TABLE IF NOT EXISTS articles (id TEXT PRIMARY KEY, title TEXT, summary TEXT, content TEXT, author TEXT, category TEXT, createdAt TEXT, imageUrl TEXT, isActive INTEGER, displayOptions TEXT, gallery TEXT, tags TEXT)`);
-  await turso.execute(`CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, name TEXT, color TEXT, showOnHomepage INTEGER, showInMenu INTEGER, isActive INTEGER DEFAULT 1)`);
-  await turso.execute(`CREATE TABLE IF NOT EXISTS companies (id TEXT PRIMARY KEY, name TEXT, category TEXT, authorizedPerson TEXT, phone TEXT, whatsapp TEXT, address TEXT, district TEXT, website TEXT, description TEXT, logo TEXT, isApproved INTEGER DEFAULT 0, createdAt TEXT)`);
-  await turso.execute(`CREATE TABLE IF NOT EXISTS menus (id TEXT PRIMARY KEY, title TEXT, url TEXT, "order" INTEGER, is_active INTEGER DEFAULT 1, parent_id TEXT)`);
-  
+  // Retry logic for database initialization
+  const initDb = async (retries = 3, delay = 5000) => {
+    // Small initial delay to let network settle on some platforms (like Render)
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    for (let i = 0; i < retries; i++) {
+      try {
+        console.log(`Database initialization attempt ${i + 1}...`);
+        // Initialize database schema
+        await turso.execute(`CREATE TABLE IF NOT EXISTS config (id TEXT PRIMARY KEY, logoUrl TEXT, siteName TEXT, siteTitle TEXT, siteDescription TEXT, siteKeywords TEXT, footerText TEXT)`);
+        await turso.execute(`CREATE TABLE IF NOT EXISTS articles (id TEXT PRIMARY KEY, title TEXT, summary TEXT, content TEXT, author TEXT, category TEXT, createdAt TEXT, imageUrl TEXT, isActive INTEGER, displayOptions TEXT, gallery TEXT, tags TEXT)`);
+        await turso.execute(`CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, name TEXT, color TEXT, showOnHomepage INTEGER, showInMenu INTEGER, isActive INTEGER DEFAULT 1)`);
+        await turso.execute(`CREATE TABLE IF NOT EXISTS companies (id TEXT PRIMARY KEY, name TEXT, category TEXT, authorizedPerson TEXT, phone TEXT, whatsapp TEXT, address TEXT, district TEXT, website TEXT, description TEXT, logo TEXT, isApproved INTEGER DEFAULT 0, createdAt TEXT)`);
+        await turso.execute(`CREATE TABLE IF NOT EXISTS menus (id TEXT PRIMARY KEY, title TEXT, url TEXT, "order" INTEGER, is_active INTEGER DEFAULT 1, parent_id TEXT)`);
+        
+        console.log("Database initialized successfully.");
+        return true;
+      } catch (err) {
+        console.error(`Database init failed (Attempt ${i + 1}/${retries}):`, err instanceof Error ? err.message : err);
+        if (i < retries - 1) {
+          console.log(`Waiting ${delay/1000}s before next attempt...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    return false;
+  };
+
+  const dbReady = await initDb();
+  if (!dbReady) {
+    console.error("CRITICAL: Could not connect to database after multiple attempts. Exiting...");
+    process.exit(1);
+  }
+
   // Migration: Add SEO columns to config if they don't exist
   try {
     const tableInfo = await turso.execute("PRAGMA table_info(config)");
