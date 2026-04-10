@@ -11,23 +11,12 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-/* 🔥 ENV KONTROL (EN KRİTİK) */
-if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
-  console.error("ENV YOK! TURSO bilgileri eksik");
-}
+const db = createClient({
+  url: process.env.TURSO_DATABASE_URL || "",
+  authToken: process.env.TURSO_AUTH_TOKEN || "",
+});
 
-/* 🔥 DB (patlamasın diye try/catch) */
-let db: any = null;
-try {
-  db = createClient({
-    url: process.env.TURSO_DATABASE_URL || "",
-    authToken: process.env.TURSO_AUTH_TOKEN || "",
-  });
-} catch (e) {
-  console.error("DB oluşturulamadı:", e);
-}
-
-/* ================= API ================= */
+/* API */
 
 app.get("/api/test", (req, res) => {
   res.json({ ok: true });
@@ -35,28 +24,24 @@ app.get("/api/test", (req, res) => {
 
 app.get("/api/articles", async (req, res) => {
   try {
-    if (!db) return res.json([]);
     const r = await db.execute("SELECT * FROM articles");
     res.json(r.rows || []);
-  } catch (e) {
-    console.error(e);
+  } catch {
     res.json([]);
   }
 });
 
 app.get("/api/categories", async (req, res) => {
   try {
-    if (!db) return res.json([]);
     const r = await db.execute("SELECT * FROM categories");
     res.json(r.rows || []);
-  } catch (e) {
+  } catch {
     res.json([]);
   }
 });
 
 app.get("/api/menus", async (req, res) => {
   try {
-    if (!db) return res.json([]);
     const r = await db.execute("SELECT * FROM menus");
     res.json(r.rows || []);
   } catch {
@@ -64,7 +49,6 @@ app.get("/api/menus", async (req, res) => {
   }
 });
 
-/* 🔥 LOGIN PATLAMASIN */
 app.post("/api/admin/login", (req, res) => {
   res.json({
     success: true,
@@ -73,7 +57,7 @@ app.post("/api/admin/login", (req, res) => {
   });
 });
 
-/* ================= FRONTEND ================= */
+/* FRONTEND */
 
 app.use(express.static(path.join(__dirname, "dist")));
 
@@ -81,8 +65,8 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
-/* ================= START ================= */
+/* START */
 
 app.listen(PORT, () => {
-  console.log("ÇALIŞTI:", PORT);
+  console.log("Çalıştı:", PORT);
 });
