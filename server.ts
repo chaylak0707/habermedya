@@ -37,15 +37,20 @@ async function startServer() {
   console.log("Starting server in", process.env.NODE_ENV, "mode...");
 
   // Validate critical environment variables
-  if (!process.env.TURSO_DATABASE_URL) {
+  const dbUrl = process.env.TURSO_DATABASE_URL?.trim();
+  const dbToken = process.env.TURSO_AUTH_TOKEN?.trim();
+
+  if (!dbUrl) {
     console.error("CRITICAL ERROR: TURSO_DATABASE_URL is not set.");
     process.exit(1);
   }
 
+  console.log(`Connecting to Turso at: ${dbUrl.split('.io')[0]}.io...`);
+
   // Turso client
   const turso = createClient({
-    url: process.env.TURSO_DATABASE_URL,
-    authToken: process.env.TURSO_AUTH_TOKEN || "",
+    url: dbUrl,
+    authToken: dbToken || "",
   });
 
   // Initialize database schema
