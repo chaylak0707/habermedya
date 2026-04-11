@@ -36,7 +36,8 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || 3000;
 
   app.use(await import('cookie-parser').then(m => m.default()));
-  app.use(express.json({ limit: '50mb' }));
+  app.use(express.json({ limit: '100mb' }));
+  app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
   // Serve static files from uploads directory with Firebase fallback
   app.use('/uploads', async (req, res, next) => {
@@ -407,14 +408,24 @@ async function startServer() {
       try {
         const bucket = "gen-lang-client-0675548272.firebasestorage.app";
         const firebasePath = `uploads/${req.file.filename}`;
-        const firebaseURL = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(firebasePath)}`;
+        // Use the correct Firebase Storage REST API for media upload
+        const firebaseURL = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?uploadType=media&name=${encodeURIComponent(firebasePath)}`;
         
         const fileBuffer = fs.readFileSync(req.file.path);
-        await fetch(firebaseURL, {
+        const fbResponse = await fetch(firebaseURL, {
           method: 'POST',
-          headers: { 'Content-Type': req.file.mimetype },
+          headers: { 
+            'Content-Type': req.file.mimetype,
+            'Content-Length': fileBuffer.length.toString()
+          },
           body: fileBuffer
         });
+
+        if (!fbResponse.ok) {
+          const errorText = await fbResponse.text();
+          throw new Error(`Firebase upload failed: ${fbResponse.status} ${errorText}`);
+        }
+
         console.log("File also backed up to Firebase Storage:", firebasePath);
       } catch (fbError) {
         console.error("Firebase backup failed (continuing with local only):", fbError);
