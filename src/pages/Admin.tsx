@@ -304,6 +304,10 @@ export default function Admin() {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [editingArticleId, activeTab, editingCategoryId, editingMenuId, editingTopMenuId, editingCompanyId]);
+
   const checkAuth = async () => {
     try {
       const response = await fetch('/api/admin/me');

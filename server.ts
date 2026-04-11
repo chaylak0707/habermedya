@@ -64,40 +64,34 @@ async function startServer() {
   // Migration: Add SEO columns to config if they don't exist
   try {
     const tableInfo = await turso.execute("PRAGMA table_info(config)");
-    const hasSiteTitle = tableInfo.rows.some(row => row[1] === 'siteTitle');
-    if (!hasSiteTitle) {
-      console.log("Adding SEO columns to config table...");
-      await turso.execute(`ALTER TABLE config ADD COLUMN siteTitle TEXT`);
-      await turso.execute(`ALTER TABLE config ADD COLUMN siteDescription TEXT`);
-      await turso.execute(`ALTER TABLE config ADD COLUMN siteKeywords TEXT`);
-    }
-    
-    const hasFooterText = tableInfo.rows.some(row => row[1] === 'footerText' || (row as any).name === 'footerText');
-    if (!hasFooterText) {
-      console.log("Adding footerText column to config table...");
-      await turso.execute(`ALTER TABLE config ADD COLUMN footerText TEXT`);
-    }
-
-    const hasServiceCity = tableInfo.rows.some(row => row[1] === 'serviceCity' || (row as any).name === 'serviceCity');
-    if (!hasServiceCity) {
-      console.log("Adding serviceCity column to config table...");
-      await turso.execute(`ALTER TABLE config ADD COLUMN serviceCity TEXT DEFAULT 'mersin'`);
-    }
-
     // Add service-specific columns
-    const columnsToAdd = [
-      'pharmacyCity', 'pharmacyDistrict',
-      'weatherCity', 'weatherDistrict',
-      'trafficCity', 'trafficDistrict',
-      'prayerCity', 'prayerDistrict',
-      'stockBg', 'pharmacyBg', 'weatherBg', 'prayerBg', 'trafficBg', 'resultsBg'
+    const columnsToSync = [
+      { name: 'siteTitle', type: 'TEXT', default: "''" },
+      { name: 'siteDescription', type: 'TEXT', default: "''" },
+      { name: 'siteKeywords', type: 'TEXT', default: "''" },
+      { name: 'footerText', type: 'TEXT', default: "'© 2026 DİNÇ SIHHİ TESİSAT. Tüm hakları saklıdır.'" },
+      { name: 'serviceCity', type: 'TEXT', default: "'mersin'" },
+      { name: 'pharmacyCity', type: 'TEXT', default: "'mersin'" },
+      { name: 'pharmacyDistrict', type: 'TEXT', default: "''" },
+      { name: 'weatherCity', type: 'TEXT', default: "'mersin'" },
+      { name: 'weatherDistrict', type: 'TEXT', default: "''" },
+      { name: 'trafficCity', type: 'TEXT', default: "'mersin'" },
+      { name: 'trafficDistrict', type: 'TEXT', default: "''" },
+      { name: 'prayerCity', type: 'TEXT', default: "'mersin'" },
+      { name: 'prayerDistrict', type: 'TEXT', default: "''" },
+      { name: 'stockBg', type: 'TEXT', default: "''" },
+      { name: 'pharmacyBg', type: 'TEXT', default: "''" },
+      { name: 'weatherBg', type: 'TEXT', default: "''" },
+      { name: 'prayerBg', type: 'TEXT', default: "''" },
+      { name: 'trafficBg', type: 'TEXT', default: "''" },
+      { name: 'resultsBg', type: 'TEXT', default: "''" }
     ];
 
-    for (const col of columnsToAdd) {
-      const hasCol = tableInfo.rows.some(row => row[1] === col || (row as any).name === col);
+    for (const col of columnsToSync) {
+      const hasCol = tableInfo.rows.some(row => row[1] === col.name || (row as any).name === col.name);
       if (!hasCol) {
-        console.log(`Adding ${col} column to config table...`);
-        await turso.execute(`ALTER TABLE config ADD COLUMN ${col} TEXT DEFAULT 'mersin'`);
+        console.log(`Adding ${col.name} column to config table...`);
+        await turso.execute(`ALTER TABLE config ADD COLUMN ${col.name} ${col.type} DEFAULT ${col.default}`);
       }
     }
   } catch (e) {
