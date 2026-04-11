@@ -35,6 +35,42 @@ async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
 
+  app.use(await import('cookie-parser').then(m => m.default()));
+  app.use(express.json({ limit: '50mb' }));
+
+  // Serve static files from uploads directory with Firebase fallback
+  app.use('/uploads', async (req, res, next) => {
+    const filePath = path.join(UPLOADS_DIR, req.path);
+    
+    // If file exists locally, serve it
+    if (fs.existsSync(filePath) && fs.lstatSync(filePath).isFile()) {
+      return express.static(UPLOADS_DIR)(req, res, next);
+    }
+
+    // If file doesn't exist locally, try to proxy from Firebase Storage as a fallback
+    const bucket = "gen-lang-client-0675548272.firebasestorage.app";
+    const firebasePath = `uploads${req.path}`;
+    const firebaseURL = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(firebasePath)}?alt=media`;
+
+    try {
+      const response = await fetch(firebaseURL);
+      if (response.ok) {
+        const contentType = response.headers.get('content-type');
+        if (contentType) res.setHeader('Content-Type', contentType);
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        const arrayBuffer = await response.arrayBuffer();
+        return res.send(Buffer.from(arrayBuffer));
+      }
+    } catch (error) {
+      console.error(`Firebase fallback failed for ${req.path}:`, error);
+    }
+
+    next();
+  });
+
+  // API routes that don't depend on DB initialization can be registered here
+  app.get("/api/health", (req, res) => res.json({ status: "ok" }));
+
   console.log("Starting server in", process.env.NODE_ENV, "mode...");
 
   // Validate critical environment variables
@@ -183,9 +219,6 @@ async function startServer() {
       res.status(403).json({ error: "Geçersiz oturum" });
     }
   };
-
-  app.use(await import('cookie-parser').then(m => m.default()));
-  app.use(express.json());
 
   // Auth Routes
   app.post("/api/admin/login", async (req, res) => {
@@ -358,37 +391,6 @@ async function startServer() {
   // Explicitly remove them if they exist (user request)
   await turso.execute("DELETE FROM menus WHERE id IN ('rehber', 'resmi-ilanlar') OR url IN ('/rehber', '/resmi-ilanlar')");
 
-  app.use(express.json({ limit: '50mb' }));
-  app.use('/uploads', async (req, res, next) => {
-    const filePath = path.join(UPLOADS_DIR, req.path);
-    
-    // If file exists locally, serve it
-    if (fs.existsSync(filePath) && fs.lstatSync(filePath).isFile()) {
-      return express.static(UPLOADS_DIR)(req, res, next);
-    }
-
-    // If file doesn't exist locally, try to proxy from Firebase Storage as a fallback
-    // This handles cases where files were uploaded in a previous session/container
-    const bucket = "gen-lang-client-0675548272.firebasestorage.app";
-    const firebasePath = `uploads${req.path}`;
-    const firebaseURL = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(firebasePath)}?alt=media`;
-
-    try {
-      const response = await fetch(firebaseURL);
-      if (response.ok) {
-        const contentType = response.headers.get('content-type');
-        if (contentType) res.setHeader('Content-Type', contentType);
-        res.setHeader('Cache-Control', 'public, max-age=86400');
-        const arrayBuffer = await response.arrayBuffer();
-        return res.send(Buffer.from(arrayBuffer));
-      }
-    } catch (error) {
-      console.error(`Firebase fallback failed for ${req.path}:`, error);
-    }
-
-    next();
-  });
-
   // API routes
   app.post("/api/upload", upload.single('file'), async (req, res) => {
     console.log("Upload request received:", req.file ? req.file.originalname : "No file");
@@ -531,6 +533,9 @@ async function startServer() {
 
     const fetchWeather = async (cityName: string, districtName?: string) => {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
         const cityCoords: Record<string, {lat: number, lon: number}> = {
           'mersin': {lat: 36.81, lon: 34.63},
           'istanbul': {lat: 41.01, lon: 28.98},
@@ -572,7 +577,10 @@ async function startServer() {
         }
 
         console.log(`Fetching weather from Open-Meteo for ${districtName || cityName}`);
-        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`);
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
         
         if (!response.ok) throw new Error(`Open-Meteo error: ${response.status}`);
         
@@ -650,9 +658,13 @@ async function startServer() {
       // Fallback to CollectAPI if Open-Meteo fails and key exists
       if (apiKey && apiKey !== "" && apiKey !== "YOUR_API_KEY") {
         console.log(`Falling back to CollectAPI for weather ${activeDistrict || city}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         const response = await fetch(`https://api.collectapi.com/weather/getWeather?data.city=${city.toLowerCase()}`, {
-          headers: { "authorization": `apikey ${apiKey}` }
+          headers: { "authorization": `apikey ${apiKey}` },
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         if (response.ok) {
           const data = await response.json();
           if (data.success) {
@@ -1005,7 +1017,12 @@ async function startServer() {
   app.get("/api/market", async (req, res) => {
     try {
       // Try a more reliable and free API first
-      const response = await fetch('https://finans.truncgil.com/today.json');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const response = await fetch('https://finans.truncgil.com/today.json', {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
       
       if (response.ok) {
         const data = await response.json();
@@ -1035,12 +1052,16 @@ async function startServer() {
       }
 
       // Fallback to original source if first one fails
+      const fController = new AbortController();
+      const fTimeoutId = setTimeout(() => fController.abort(), 10000);
       const fallbackResponse = await fetch('https://api.genelpara.com/embed/para-birimleri.json', {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Referer': 'https://www.genelpara.com/'
-        }
+        },
+        signal: fController.signal
       });
+      clearTimeout(fTimeoutId);
       
       if (fallbackResponse.ok) {
         const data = await fallbackResponse.json();
@@ -1057,6 +1078,39 @@ async function startServer() {
         GA: { satis: "6689.00", degisim: "-0.20", d_yon: "down" },
         BIST100: { satis: "13000", degisim: "0.50", d_yon: "up" }
       });
+    }
+  });
+
+  // Proxy endpoint for Firebase images to bypass CORS
+  app.get('/api/proxy-image', async (req, res) => {
+    const imageUrl = req.query.url as string;
+    if (!imageUrl) {
+      return res.status(400).send('URL is required');
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const response = await fetch(imageUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (contentType) {
+        res.setHeader('Content-Type', contentType);
+      }
+      
+      // Cache for 1 day
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+
+      const arrayBuffer = await response.arrayBuffer();
+      res.send(Buffer.from(arrayBuffer));
+    } catch (error) {
+      console.error('Proxy error:', error);
+      res.status(500).send('Error proxying image');
     }
   });
 
@@ -1298,36 +1352,7 @@ async function startServer() {
     });
   }
 
-  // Proxy endpoint for Firebase images to bypass CORS
-app.get('/api/proxy-image', async (req, res) => {
-  const imageUrl = req.query.url as string;
-  if (!imageUrl) {
-    return res.status(400).send('URL is required');
-  }
-
-  try {
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.statusText}`);
-    }
-
-    const contentType = response.headers.get('content-type');
-    if (contentType) {
-      res.setHeader('Content-Type', contentType);
-    }
-    
-    // Cache for 1 day
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-
-    const arrayBuffer = await response.arrayBuffer();
-    res.send(Buffer.from(arrayBuffer));
-  } catch (error) {
-    console.error('Proxy error:', error);
-    res.status(500).send('Error proxying image');
-  }
-});
-
-app.listen(PORT, "0.0.0.0", () => {
+  app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }
