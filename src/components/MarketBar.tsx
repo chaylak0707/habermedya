@@ -38,6 +38,10 @@ export default function MarketBar() {
         // Use internal API instead of external to avoid CORS/network issues
         const response = await fetch('/api/market');
         if (response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Sunucudan geçersiz yanıt formatı alındı (JSON bekleniyordu)');
+          }
           const json = await response.json();
           if (json && json.USD && json.EUR && json.GA && json.BIST100) {
             setData({
@@ -76,6 +80,10 @@ export default function MarketBar() {
         // Use internal API instead of external wttr.in to avoid CORS/network issues
         const response = await fetch('/api/weather');
         if (response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Sunucudan geçersiz yanıt formatı alındı (JSON bekleniyordu)');
+          }
           const data = await response.json();
           if (data.success && data.current) {
             setWeather({
