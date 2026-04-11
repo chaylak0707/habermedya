@@ -156,6 +156,76 @@ const DistrictSelect = ({ value, onChange, city }: { value: string, onChange: (v
   );
 };
 
+const ServiceImageUpload = ({ 
+  label, 
+  value, 
+  onChange, 
+  onUpload 
+}: { 
+  label: string, 
+  value: string, 
+  onChange: (val: string) => void,
+  onUpload: (file: File) => Promise<string>
+}) => {
+  const [isUploading, setIsUploading] = useState(false);
+
+  return (
+    <div className="mt-4 p-4 bg-white rounded-sm border border-gray-100">
+      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{label}</label>
+      <div className="flex items-center gap-4">
+        <div className="relative w-16 h-16 flex-shrink-0 group">
+          {value ? (
+            <>
+              <img 
+                src={normalizeImageUrl(value)} 
+                alt={label} 
+                className="w-full h-full object-cover rounded-sm border border-gray-200" 
+              />
+              <button 
+                type="button"
+                onClick={() => onChange('')}
+                className="absolute -top-2 -right-2 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+              >
+                <X size={12} />
+              </button>
+            </>
+          ) : (
+            <div className="w-full h-full bg-gray-50 border-2 border-dashed border-gray-200 rounded-sm flex items-center justify-center text-gray-300">
+              <ImageIcon size={20} />
+            </div>
+          )}
+          {isUploading && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-sm">
+              <Loader2 size={16} className="animate-spin text-red-600" />
+            </div>
+          )}
+        </div>
+        <div className="flex-grow">
+          <input 
+            type="file" 
+            accept="image/*"
+            onChange={async (e) => {
+              if (e.target.files?.[0]) {
+                setIsUploading(true);
+                try {
+                  const url = await onUpload(e.target.files[0]);
+                  onChange(url);
+                } catch (err: any) {
+                  alert(err.message);
+                } finally {
+                  setIsUploading(false);
+                }
+              }
+            }}
+            className="block w-full text-[10px] text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-[10px] file:font-black file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer"
+          />
+          <p className="text-[9px] text-gray-400 mt-1 font-medium italic">Önerilen boyut: 800x1040px (Dikey)</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface Article {
   id: string;
   title: string;
@@ -2581,31 +2651,12 @@ export default function Admin() {
                       <DistrictSelect value={pharmacyDistrict} onChange={setPharmacyDistrict} city={pharmacyCity} />
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Arkaplan Resmi</label>
-                    <div className="flex items-center gap-4">
-                      {pharmacyBg && (
-                        <img src={normalizeImageUrl(pharmacyBg)} alt="Pharmacy BG" className="w-20 h-20 object-cover rounded-sm border border-gray-200" />
-                      )}
-                      <div className="flex-grow">
-                        <input 
-                          type="file" 
-                          onChange={async (e) => {
-                            if (e.target.files?.[0]) {
-                              try {
-                                const url = await uploadFile(e.target.files[0]);
-                                setPharmacyBg(url);
-                              } catch (err: any) {
-                                alert(err.message);
-                              }
-                            }
-                          }}
-                          className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-black file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
-                        />
-                        <p className="text-[10px] text-gray-400 mt-1">Önerilen boyut: 800x1040px</p>
-                      </div>
-                    </div>
-                  </div>
+                  <ServiceImageUpload 
+                    label="Arkaplan Resmi" 
+                    value={pharmacyBg} 
+                    onChange={setPharmacyBg} 
+                    onUpload={uploadFile} 
+                  />
                 </div>
 
                 {/* Weather Settings */}
@@ -2629,31 +2680,12 @@ export default function Admin() {
                       <DistrictSelect value={weatherDistrict} onChange={setWeatherDistrict} city={weatherCity} />
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Arkaplan Resmi</label>
-                    <div className="flex items-center gap-4">
-                      {weatherBg && (
-                        <img src={normalizeImageUrl(weatherBg)} alt="Weather BG" className="w-20 h-20 object-cover rounded-sm border border-gray-200" />
-                      )}
-                      <div className="flex-grow">
-                        <input 
-                          type="file" 
-                          onChange={async (e) => {
-                            if (e.target.files?.[0]) {
-                              try {
-                                const url = await uploadFile(e.target.files[0]);
-                                setWeatherBg(url);
-                              } catch (err: any) {
-                                alert(err.message);
-                              }
-                            }
-                          }}
-                          className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-black file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
-                        />
-                        <p className="text-[10px] text-gray-400 mt-1">Önerilen boyut: 800x1040px</p>
-                      </div>
-                    </div>
-                  </div>
+                  <ServiceImageUpload 
+                    label="Arkaplan Resmi" 
+                    value={weatherBg} 
+                    onChange={setWeatherBg} 
+                    onUpload={uploadFile} 
+                  />
                 </div>
 
                 {/* Traffic Settings */}
@@ -2677,31 +2709,12 @@ export default function Admin() {
                       <DistrictSelect value={trafficDistrict} onChange={setTrafficDistrict} city={trafficCity} />
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Arkaplan Resmi</label>
-                    <div className="flex items-center gap-4">
-                      {trafficBg && (
-                        <img src={normalizeImageUrl(trafficBg)} alt="Traffic BG" className="w-20 h-20 object-cover rounded-sm border border-gray-200" />
-                      )}
-                      <div className="flex-grow">
-                        <input 
-                          type="file" 
-                          onChange={async (e) => {
-                            if (e.target.files?.[0]) {
-                              try {
-                                const url = await uploadFile(e.target.files[0]);
-                                setTrafficBg(url);
-                              } catch (err: any) {
-                                alert(err.message);
-                              }
-                            }
-                          }}
-                          className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-black file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
-                        />
-                        <p className="text-[10px] text-gray-400 mt-1">Önerilen boyut: 800x1040px</p>
-                      </div>
-                    </div>
-                  </div>
+                  <ServiceImageUpload 
+                    label="Arkaplan Resmi" 
+                    value={trafficBg} 
+                    onChange={setTrafficBg} 
+                    onUpload={uploadFile} 
+                  />
                 </div>
 
                 {/* Prayer Times Settings */}
@@ -2725,31 +2738,12 @@ export default function Admin() {
                       <DistrictSelect value={prayerDistrict} onChange={setPrayerDistrict} city={prayerCity} />
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Arkaplan Resmi</label>
-                    <div className="flex items-center gap-4">
-                      {prayerBg && (
-                        <img src={normalizeImageUrl(prayerBg)} alt="Prayer BG" className="w-20 h-20 object-cover rounded-sm border border-gray-200" />
-                      )}
-                      <div className="flex-grow">
-                        <input 
-                          type="file" 
-                          onChange={async (e) => {
-                            if (e.target.files?.[0]) {
-                              try {
-                                const url = await uploadFile(e.target.files[0]);
-                                setPrayerBg(url);
-                              } catch (err: any) {
-                                alert(err.message);
-                              }
-                            }
-                          }}
-                          className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-black file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
-                        />
-                        <p className="text-[10px] text-gray-400 mt-1">Önerilen boyut: 800x1040px</p>
-                      </div>
-                    </div>
-                  </div>
+                  <ServiceImageUpload 
+                    label="Arkaplan Resmi" 
+                    value={prayerBg} 
+                    onChange={setPrayerBg} 
+                    onUpload={uploadFile} 
+                  />
                 </div>
 
                 {/* Stock Settings */}
@@ -2763,31 +2757,12 @@ export default function Admin() {
                       <p className="text-xs text-gray-500 font-medium">Borsa kartı için arkaplan resmi yükleyin.</p>
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Arkaplan Resmi</label>
-                    <div className="flex items-center gap-4">
-                      {stockBg && (
-                        <img src={normalizeImageUrl(stockBg)} alt="Stock BG" className="w-20 h-20 object-cover rounded-sm border border-gray-200" />
-                      )}
-                      <div className="flex-grow">
-                        <input 
-                          type="file" 
-                          onChange={async (e) => {
-                            if (e.target.files?.[0]) {
-                              try {
-                                const url = await uploadFile(e.target.files[0]);
-                                setStockBg(url);
-                              } catch (err: any) {
-                                alert(err.message);
-                              }
-                            }
-                          }}
-                          className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-black file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
-                        />
-                        <p className="text-[10px] text-gray-400 mt-1">Önerilen boyut: 800x1040px</p>
-                      </div>
-                    </div>
-                  </div>
+                  <ServiceImageUpload 
+                    label="Arkaplan Resmi" 
+                    value={stockBg} 
+                    onChange={setStockBg} 
+                    onUpload={uploadFile} 
+                  />
                 </div>
 
                 {/* Results Settings */}
@@ -2801,31 +2776,12 @@ export default function Admin() {
                       <p className="text-xs text-gray-500 font-medium">Canlı sonuçlar kartı için arkaplan resmi yükleyin.</p>
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Arkaplan Resmi</label>
-                    <div className="flex items-center gap-4">
-                      {resultsBg && (
-                        <img src={normalizeImageUrl(resultsBg)} alt="Results BG" className="w-20 h-20 object-cover rounded-sm border border-gray-200" />
-                      )}
-                      <div className="flex-grow">
-                        <input 
-                          type="file" 
-                          onChange={async (e) => {
-                            if (e.target.files?.[0]) {
-                              try {
-                                const url = await uploadFile(e.target.files[0]);
-                                setResultsBg(url);
-                              } catch (err: any) {
-                                alert(err.message);
-                              }
-                            }
-                          }}
-                          className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-black file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
-                        />
-                        <p className="text-[10px] text-gray-400 mt-1">Önerilen boyut: 800x1040px</p>
-                      </div>
-                    </div>
-                  </div>
+                  <ServiceImageUpload 
+                    label="Arkaplan Resmi" 
+                    value={resultsBg} 
+                    onChange={setResultsBg} 
+                    onUpload={uploadFile} 
+                  />
                 </div>
               </div>
 
