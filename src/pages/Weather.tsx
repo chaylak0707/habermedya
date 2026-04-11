@@ -53,6 +53,10 @@ export default function Weather() {
       setLoading(true);
       const url = district ? `/api/weather?district=${district}` : '/api/weather';
       const response = await fetch(url);
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Sunucudan geçersiz yanıt formatı alındı (JSON bekleniyordu)');
+      }
       const data = await response.json();
       
       if (data.success) {
