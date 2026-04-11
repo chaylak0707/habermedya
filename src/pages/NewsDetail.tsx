@@ -149,6 +149,11 @@ export default function NewsDetail(props: { onReady: () => void }) {
       }
       metaKeywords.setAttribute('content', article.tags || '');
     }
+
+    return () => {
+      // Reset title when leaving the page
+      // Home.tsx will set it correctly when it mounts
+    };
   }, [article]);
 
   if (!article || !categories || !sidebarArticles || !mostReadArticles || !sidebarAds) return null;

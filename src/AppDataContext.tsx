@@ -6,6 +6,14 @@ export interface AppData {
   articles: any[];
   categories: any[];
   menus: any[];
+  serviceBgs?: {
+    stock: string;
+    pharmacy: string;
+    weather: string;
+    prayer: string;
+    traffic: string;
+    results: string;
+  };
   refreshData: () => Promise<void>;
 }
 

@@ -29,6 +29,9 @@ export default function CategoryPage() {
       const categoriesData = (await fetchWithCache('categories', 'categories')) as {name: string, color: string}[];
       setCategories(categoriesData);
       
+      const categoryName = categoriesData.find(c => slugify(c.name) === slug)?.name || slug;
+      document.title = `${categoryName} Haberleri - DİNÇ SIHHİ TESİSAT`;
+      
       setLoading(false);
     };
 

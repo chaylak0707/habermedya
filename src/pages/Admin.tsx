@@ -248,6 +248,12 @@ export default function Admin() {
   const [trafficDistrict, setTrafficDistrict] = useState('');
   const [prayerCity, setPrayerCity] = useState('mersin');
   const [prayerDistrict, setPrayerDistrict] = useState('');
+  const [stockBg, setStockBg] = useState('');
+  const [pharmacyBg, setPharmacyBg] = useState('');
+  const [weatherBg, setWeatherBg] = useState('');
+  const [prayerBg, setPrayerBg] = useState('');
+  const [trafficBg, setTrafficBg] = useState('');
+  const [resultsBg, setResultsBg] = useState('');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'articles' | 'settings' | 'gallery' | 'ads' | 'categories' | 'top-menu' | 'service-settings' | 'companies' | 'menus' | 'users'>('dashboard');
   const [admin, setAdmin] = useState<any>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
@@ -397,6 +403,12 @@ export default function Admin() {
         setTrafficDistrict(data.trafficDistrict as string || '');
         setPrayerCity(data.prayerCity as string || 'mersin');
         setPrayerDistrict(data.prayerDistrict as string || '');
+        setStockBg(data.stockBg as string || '');
+        setPharmacyBg(data.pharmacyBg as string || '');
+        setWeatherBg(data.weatherBg as string || '');
+        setPrayerBg(data.prayerBg as string || '');
+        setTrafficBg(data.trafficBg as string || '');
+        setResultsBg(data.resultsBg as string || '');
       }
 
       const adsResult = await db.execute("SELECT * FROM ads");
@@ -784,11 +796,13 @@ export default function Admin() {
       await db.execute({
         sql: `INSERT OR REPLACE INTO config (
           id, logoUrl, siteName, siteTitle, siteDescription, siteKeywords, footerText, serviceCity,
-          pharmacyCity, pharmacyDistrict, weatherCity, weatherDistrict, trafficCity, trafficDistrict, prayerCity, prayerDistrict
-        ) VALUES ('site', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          pharmacyCity, pharmacyDistrict, weatherCity, weatherDistrict, trafficCity, trafficDistrict, prayerCity, prayerDistrict,
+          stockBg, pharmacyBg, weatherBg, prayerBg, trafficBg, resultsBg
+        ) VALUES ('site', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           logoUrl || '', siteName, siteTitle, siteDescription, siteKeywords, footerText, serviceCity,
-          pharmacyCity, pharmacyDistrict, weatherCity, weatherDistrict, trafficCity, trafficDistrict, prayerCity, prayerDistrict
+          pharmacyCity, pharmacyDistrict, weatherCity, weatherDistrict, trafficCity, trafficDistrict, prayerCity, prayerDistrict,
+          stockBg, pharmacyBg, weatherBg, prayerBg, trafficBg, resultsBg
         ]
       });
       showSuccess('Site ayarları başarıyla güncellendi!');
@@ -2563,6 +2577,31 @@ export default function Admin() {
                       <DistrictSelect value={pharmacyDistrict} onChange={setPharmacyDistrict} city={pharmacyCity} />
                     </div>
                   </div>
+                  <div className="mt-4">
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Arkaplan Resmi</label>
+                    <div className="flex items-center gap-4">
+                      {pharmacyBg && (
+                        <img src={normalizeImageUrl(pharmacyBg)} alt="Pharmacy BG" className="w-20 h-20 object-cover rounded-sm border border-gray-200" />
+                      )}
+                      <div className="flex-grow">
+                        <input 
+                          type="file" 
+                          onChange={async (e) => {
+                            if (e.target.files?.[0]) {
+                              try {
+                                const url = await uploadFile(e.target.files[0]);
+                                setPharmacyBg(url);
+                              } catch (err: any) {
+                                alert(err.message);
+                              }
+                            }
+                          }}
+                          className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-black file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                        />
+                        <p className="text-[10px] text-gray-400 mt-1">Önerilen boyut: 800x1040px</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Weather Settings */}
@@ -2584,6 +2623,31 @@ export default function Admin() {
                     <div>
                       <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">İlçe (Opsiyonel)</label>
                       <DistrictSelect value={weatherDistrict} onChange={setWeatherDistrict} city={weatherCity} />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Arkaplan Resmi</label>
+                    <div className="flex items-center gap-4">
+                      {weatherBg && (
+                        <img src={normalizeImageUrl(weatherBg)} alt="Weather BG" className="w-20 h-20 object-cover rounded-sm border border-gray-200" />
+                      )}
+                      <div className="flex-grow">
+                        <input 
+                          type="file" 
+                          onChange={async (e) => {
+                            if (e.target.files?.[0]) {
+                              try {
+                                const url = await uploadFile(e.target.files[0]);
+                                setWeatherBg(url);
+                              } catch (err: any) {
+                                alert(err.message);
+                              }
+                            }
+                          }}
+                          className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-black file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                        />
+                        <p className="text-[10px] text-gray-400 mt-1">Önerilen boyut: 800x1040px</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2609,6 +2673,31 @@ export default function Admin() {
                       <DistrictSelect value={trafficDistrict} onChange={setTrafficDistrict} city={trafficCity} />
                     </div>
                   </div>
+                  <div className="mt-4">
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Arkaplan Resmi</label>
+                    <div className="flex items-center gap-4">
+                      {trafficBg && (
+                        <img src={normalizeImageUrl(trafficBg)} alt="Traffic BG" className="w-20 h-20 object-cover rounded-sm border border-gray-200" />
+                      )}
+                      <div className="flex-grow">
+                        <input 
+                          type="file" 
+                          onChange={async (e) => {
+                            if (e.target.files?.[0]) {
+                              try {
+                                const url = await uploadFile(e.target.files[0]);
+                                setTrafficBg(url);
+                              } catch (err: any) {
+                                alert(err.message);
+                              }
+                            }
+                          }}
+                          className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-black file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                        />
+                        <p className="text-[10px] text-gray-400 mt-1">Önerilen boyut: 800x1040px</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Prayer Times Settings */}
@@ -2630,6 +2719,107 @@ export default function Admin() {
                     <div>
                       <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">İlçe (Opsiyonel)</label>
                       <DistrictSelect value={prayerDistrict} onChange={setPrayerDistrict} city={prayerCity} />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Arkaplan Resmi</label>
+                    <div className="flex items-center gap-4">
+                      {prayerBg && (
+                        <img src={normalizeImageUrl(prayerBg)} alt="Prayer BG" className="w-20 h-20 object-cover rounded-sm border border-gray-200" />
+                      )}
+                      <div className="flex-grow">
+                        <input 
+                          type="file" 
+                          onChange={async (e) => {
+                            if (e.target.files?.[0]) {
+                              try {
+                                const url = await uploadFile(e.target.files[0]);
+                                setPrayerBg(url);
+                              } catch (err: any) {
+                                alert(err.message);
+                              }
+                            }
+                          }}
+                          className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-black file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                        />
+                        <p className="text-[10px] text-gray-400 mt-1">Önerilen boyut: 800x1040px</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stock Settings */}
+                <div className="p-6 bg-gray-50 rounded-sm border border-gray-100">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-blue-900 rounded-sm flex items-center justify-center text-white shadow-lg shadow-blue-100">
+                      <Activity size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-gray-900">Canlı Borsa</h3>
+                      <p className="text-xs text-gray-500 font-medium">Borsa kartı için arkaplan resmi yükleyin.</p>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Arkaplan Resmi</label>
+                    <div className="flex items-center gap-4">
+                      {stockBg && (
+                        <img src={normalizeImageUrl(stockBg)} alt="Stock BG" className="w-20 h-20 object-cover rounded-sm border border-gray-200" />
+                      )}
+                      <div className="flex-grow">
+                        <input 
+                          type="file" 
+                          onChange={async (e) => {
+                            if (e.target.files?.[0]) {
+                              try {
+                                const url = await uploadFile(e.target.files[0]);
+                                setStockBg(url);
+                              } catch (err: any) {
+                                alert(err.message);
+                              }
+                            }
+                          }}
+                          className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-black file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                        />
+                        <p className="text-[10px] text-gray-400 mt-1">Önerilen boyut: 800x1040px</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Results Settings */}
+                <div className="p-6 bg-gray-50 rounded-sm border border-gray-100">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-green-600 rounded-sm flex items-center justify-center text-white shadow-lg shadow-green-100">
+                      <Activity size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-gray-900">Canlı Sonuçlar</h3>
+                      <p className="text-xs text-gray-500 font-medium">Canlı sonuçlar kartı için arkaplan resmi yükleyin.</p>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Arkaplan Resmi</label>
+                    <div className="flex items-center gap-4">
+                      {resultsBg && (
+                        <img src={normalizeImageUrl(resultsBg)} alt="Results BG" className="w-20 h-20 object-cover rounded-sm border border-gray-200" />
+                      )}
+                      <div className="flex-grow">
+                        <input 
+                          type="file" 
+                          onChange={async (e) => {
+                            if (e.target.files?.[0]) {
+                              try {
+                                const url = await uploadFile(e.target.files[0]);
+                                setResultsBg(url);
+                              } catch (err: any) {
+                                alert(err.message);
+                              }
+                            }
+                          }}
+                          className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-black file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                        />
+                        <p className="text-[10px] text-gray-400 mt-1">Önerilen boyut: 800x1040px</p>
+                      </div>
                     </div>
                   </div>
                 </div>

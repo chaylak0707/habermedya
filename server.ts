@@ -10,13 +10,14 @@ import multer from "multer";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Configure multer for file uploads
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    if (!fs.existsSync(UPLOADS_DIR)) {
+      fs.mkdirSync(UPLOADS_DIR, { recursive: true });
     }
-    cb(null, uploadDir);
+    cb(null, UPLOADS_DIR);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -88,7 +89,8 @@ async function startServer() {
       'pharmacyCity', 'pharmacyDistrict',
       'weatherCity', 'weatherDistrict',
       'trafficCity', 'trafficDistrict',
-      'prayerCity', 'prayerDistrict'
+      'prayerCity', 'prayerDistrict',
+      'stockBg', 'pharmacyBg', 'weatherBg', 'prayerBg', 'trafficBg', 'resultsBg'
     ];
 
     for (const col of columnsToAdd) {
@@ -364,11 +366,11 @@ async function startServer() {
 
   app.use(express.json({ limit: '50mb' }));
   app.use('/uploads', async (req, res, next) => {
-    const filePath = path.join(__dirname, 'uploads', req.path);
+    const filePath = path.join(UPLOADS_DIR, req.path);
     
     // If file exists locally, serve it
     if (fs.existsSync(filePath) && fs.lstatSync(filePath).isFile()) {
-      return express.static(path.join(__dirname, 'uploads'))(req, res, next);
+      return express.static(UPLOADS_DIR)(req, res, next);
     }
 
     // If file doesn't exist locally, try to proxy from Firebase Storage as a fallback

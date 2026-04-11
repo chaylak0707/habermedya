@@ -38,7 +38,7 @@ interface AdConfig {
 }
 
 export default function Home() {
-  const { articles: initialArticles } = useAppData();
+  const { articles: initialArticles, siteName } = useAppData() as any;
   const [articles, setArticles] = useState<Article[]>(initialArticles);
   const [categories, setCategories] = useState<{name: string, color: string, showOnHomepage?: boolean}[]>([]);
   const [homeAd, setHomeAd] = useState<AdConfig | null>(null);
@@ -53,7 +53,11 @@ export default function Home() {
           const config = result.rows[0] as any;
           setSiteConfig(config);
           
-          if (config.siteTitle) document.title = config.siteTitle;
+          if (config.siteTitle) {
+            document.title = config.siteTitle;
+          } else {
+            document.title = siteName || 'DİNÇ SIHHİ TESİSAT';
+          }
           
           // Update meta tags
           if (config.siteDescription) {
@@ -75,13 +79,16 @@ export default function Home() {
             }
             metaKey.setAttribute('content', config.siteKeywords);
           }
+        } else {
+          document.title = siteName || 'DİNÇ SIHHİ TESİSAT';
         }
       } catch (error) {
         console.error("Error fetching site config:", error);
+        document.title = siteName || 'DİNÇ SIHHİ TESİSAT';
       }
     };
     fetchConfig();
-  }, []);
+  }, [siteName]);
 
   useEffect(() => {
     const fetchData = async () => {

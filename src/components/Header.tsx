@@ -112,7 +112,7 @@ export default function Header() {
           </Link>
           
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex space-x-6 text-[14px] font-bold text-gray-800 font-['Roboto'] items-center">
+          <nav className="hidden lg:flex space-x-6 text-[16px] font-bold text-gray-800 font-['Roboto'] items-center">
             {/* Home Link */}
             {(menus || []).filter(m => m.id === 'home').map((menu: any) => (
               <Link key={menu.id} to={menu.url} className="hover:text-[#e60026]">{menu.title?.toUpperCase()}</Link>

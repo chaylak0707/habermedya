@@ -22,6 +22,7 @@ import Directory from './pages/Directory';
 import AddCompany from './pages/AddCompany';
 import { AppDataContext } from './AppDataContext';
 import { fetchWithCache } from './lib/utils';
+import ScrollToTop from './components/ScrollToTop';
 
 function AppContent({ data }: { data: any }) {
   const location = useLocation();
@@ -29,6 +30,7 @@ function AppContent({ data }: { data: any }) {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
+      <ScrollToTop />
       {!isAdminPage && <Header />}
       <main className={isAdminPage ? "flex-1" : "max-w-[1280px] mx-auto px-2 sm:px-4 py-4 sm:py-8 flex-1"}>
         <Routes>
@@ -52,7 +54,21 @@ function AppContent({ data }: { data: any }) {
 }
 
 export default function App() {
-  const [data, setData] = useState({ logoUrl: '', siteName: '', articles: [], categories: [], menus: [] });
+  const [data, setData] = useState<any>({ 
+    logoUrl: '', 
+    siteName: '', 
+    articles: [], 
+    categories: [], 
+    menus: [],
+    serviceBgs: {
+      stock: '',
+      pharmacy: '',
+      weather: '',
+      prayer: '',
+      traffic: '',
+      results: ''
+    }
+  });
   const [isReady, setIsReady] = useState(false);
 
   const fetchData = async () => {
@@ -91,7 +107,15 @@ export default function App() {
           showOnHomepage: !!cat.showOnHomepage,
           isActive: cat.isActive === undefined ? true : !!cat.isActive
         })),
-        menus: Array.isArray(menusData) ? menusData : []
+        menus: Array.isArray(menusData) ? menusData : [],
+        serviceBgs: {
+          stock: configData.stockBg || '',
+          pharmacy: configData.pharmacyBg || '',
+          weather: configData.weatherBg || '',
+          prayer: configData.prayerBg || '',
+          traffic: configData.trafficBg || '',
+          results: configData.resultsBg || ''
+        }
       });
     } catch (error: any) {
       console.error("Error fetching initial data:", error);

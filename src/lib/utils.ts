@@ -159,13 +159,8 @@ export const formatTurkishContent = (html: string) => {
 };
 
 export const normalizeImageUrl = (url: string): string => {
-  if (!url) return "https://picsum.photos/seed/plumbing/1200/600";
+  if (!url || url === "") return "https://picsum.photos/seed/news-fallback/1200/600";
   
-  // If it's a Firebase Storage URL, use our proxy to avoid CORS issues
-  if (url.includes('firebasestorage.googleapis.com')) {
-    return `/api/proxy-image?url=${encodeURIComponent(url)}`;
-  }
-
   // If it's already a full URL (http/https), return it
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
@@ -173,19 +168,13 @@ export const normalizeImageUrl = (url: string): string => {
 
   // If it's a relative path starting with /uploads/ or uploads/
   if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
-    const cleanUrl = url.startsWith('/') ? url : '/' + url;
-    
-    // If it's a legacy path that needs Firebase
-    if (url.includes('/news/') || url.includes('/ads/')) {
-       const bucket = "gen-lang-client-0675548272.firebasestorage.app";
-       const path = url.startsWith('/') ? url.substring(1) : url;
-       const firebaseURL = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media`;
-       return `/api/proxy-image?url=${encodeURIComponent(firebaseURL)}`;
-    }
-
-    // Otherwise it's a local file served by our express server
-    return cleanUrl;
+    return url.startsWith('/') ? url : '/' + url;
   }
   
+  // Fallback for any other string that might be a local path
+  if (!url.includes('.') && !url.includes('/')) {
+     return `https://picsum.photos/seed/${url}/1200/600`;
+  }
+
   return url;
 };
