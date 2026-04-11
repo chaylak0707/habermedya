@@ -18,26 +18,24 @@ const client = {
 
       clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch (e) {
-          const text = await response.text();
-          console.error(`Query failed with status ${response.status}. Response: ${text.substring(0, 200)}`);
-          throw new Error(`Database query failed with status ${response.status}`);
-        }
-        throw new Error(errorData.details || errorData.error || 'Database query failed');
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        // Not JSON
       }
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error(`Expected JSON but got ${contentType}. Response: ${text.substring(0, 200)}`);
+      if (!response.ok) {
+        throw new Error(data?.details || data?.error || `Database query failed with status ${response.status}`);
+      }
+
+      if (!data) {
+        console.error(`Expected JSON but got: ${text.substring(0, 200)}`);
         throw new Error('Server returned non-JSON response');
       }
 
-      return await response.json();
+      return data;
     } catch (error: any) {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
