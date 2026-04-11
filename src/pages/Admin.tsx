@@ -707,6 +707,20 @@ export default function Admin() {
   const handleArticleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+
+    // Check for base64 images in content which cause 413 error
+    if (content.includes('src="data:image')) {
+      const proceed = window.confirm(
+        'Haber içeriğinde doğrudan yapıştırılmış (base64) görseller tespit edildi. ' +
+        'Bu durum kaydetme sırasında "413 Payload Too Large" hatasına neden olabilir. ' +
+        'Görselleri "Görsel Ekle" butonu ile yüklemeniz önerilir. Devam etmek istiyor musunuz?'
+      );
+      if (!proceed) {
+        setIsSaving(false);
+        return;
+      }
+    }
+
     try {
       if (editingArticleId) {
         console.log('Updating article', editingArticleId, 'with image:', imageUrl);
@@ -766,6 +780,8 @@ export default function Admin() {
       ...article.displayOptions
     });
     setArticleGallery(article.gallery || []);
+    // Scroll to top when editing
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleArticleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -865,6 +881,25 @@ export default function Admin() {
   const handleConfigSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+    
+    // Check for base64 images which cause 413 error
+    const fields = [
+      { name: 'Logo', value: logoUrl },
+      { name: 'Borsa Arkaplan', value: stockBg },
+      { name: 'Eczane Arkaplan', value: pharmacyBg },
+      { name: 'Hava Durumu Arkaplan', value: weatherBg },
+      { name: 'Namaz Arkaplan', value: prayerBg },
+      { name: 'Trafik Arkaplan', value: trafficBg },
+      { name: 'Sonuçlar Arkaplan', value: resultsBg }
+    ];
+
+    const base64Field = fields.find(f => f.value && f.value.startsWith('data:image'));
+    if (base64Field) {
+      alert(`Hata: ${base64Field.name} görseli URL yerine veri (base64) olarak eklenmiş. Lütfen bu görseli "Yükle" butonu ile yükleyin. Doğrudan yapıştırma 413 (Payload Too Large) hatasına neden olur.`);
+      setIsSaving(false);
+      return;
+    }
+
     try {
       console.log('Saving config...', { siteName, logoUrlLength: logoUrl?.length });
       await db.execute({
