@@ -62,7 +62,7 @@ export default function ServiceLayout({ children, title, breadcrumb }: ServiceLa
   return (
     <div className="w-full">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-[10px] sm:text-xs text-gray-500 mb-6 bg-white p-3 rounded shadow-sm border border-gray-100 overflow-x-auto no-scrollbar whitespace-nowrap">
+      <nav className="flex items-center gap-2 text-[10px] sm:text-xs text-gray-500 mb-6 bg-white px-4 py-3 sm:p-3 rounded shadow-sm border border-gray-100 overflow-x-auto no-scrollbar whitespace-nowrap mx-0 sm:mx-0">
         <Link to="/" className="hover:text-red-600 flex-shrink-0">Anasayfa</Link>
         <ChevronRight size={14} className="flex-shrink-0" />
         <span className="text-gray-400 line-clamp-1">{breadcrumb}</span>
@@ -71,11 +71,13 @@ export default function ServiceLayout({ children, title, breadcrumb }: ServiceLa
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-8">
-          <div className="bg-white p-6 md:p-8 rounded-sm shadow-sm border border-gray-100 min-h-[600px]">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">
+          <div className="bg-white p-0 sm:p-6 md:p-8 rounded-sm shadow-sm border border-gray-100 min-h-[600px] overflow-hidden">
+            <h1 className="text-3xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100 px-4 sm:px-0 pt-4 sm:pt-0">
               {title}
             </h1>
-            {children}
+            <div className="px-4 sm:px-0 pb-8 sm:pb-0">
+              {children}
+            </div>
           </div>
         </div>
 
