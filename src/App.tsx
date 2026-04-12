@@ -29,7 +29,7 @@ function AppContent({ data }: { data: any }) {
   const isAdminPage = location.pathname.startsWith('/admin');
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-[#e6e8eb] flex flex-col">
       <ScrollToTop />
       {!isAdminPage && <Header />}
       <main className={isAdminPage ? "flex-1" : "max-w-[1280px] mx-auto px-3 sm:px-4 py-4 sm:py-8 flex-1"}>
