@@ -181,7 +181,7 @@ export default function Home() {
                       e.currentTarget.src = "https://picsum.photos/seed/news-fallback/1200/600";
                     }}
                   />
-                  <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/95 via-black/50 to-transparent p-4 md:p-8 text-white">
+                  <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 via-black/30 to-transparent md:from-black/95 md:via-black/50 md:to-transparent p-4 md:p-8 text-white">
                     <span className="px-2 py-1 cat-label font-bold mb-2 inline-block rounded-sm" style={{ backgroundColor: categories.find(c => c.name === (mainArticle?.category || 'SİYASET'))?.color || '#e60026' }}>
                       {mainArticle?.category?.toUpperCase() || 'SİYASET'}
                     </span>
@@ -375,7 +375,7 @@ export default function Home() {
                             e.currentTarget.src = "https://picsum.photos/seed/news-fallback/400/300";
                           }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-4">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent md:from-black/90 md:via-black/40 md:to-transparent flex flex-col justify-end p-4">
                           <div className="flex items-center gap-1.5 text-[11px] text-white/90 mb-2 font-medium">
                             <Clock size={13} className="text-white/80" />
                             {new Date(firstArticle.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }) + ', ' + new Date(firstArticle.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
