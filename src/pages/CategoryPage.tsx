@@ -23,7 +23,10 @@ export default function CategoryPage() {
     const fetchData = async () => {
       setLoading(true);
       const articlesData = (await fetchWithCache('articles', 'articles')) as Article[];
-      const filteredArticles = articlesData.filter(a => a.isActive !== false && slugify(a.category || '') === slug);
+      const sortedArticles = [...articlesData].sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      const filteredArticles = sortedArticles.filter(a => a.isActive !== false && slugify(a.category || '') === slug);
       setArticles(filteredArticles);
 
       const categoriesData = (await fetchWithCache('categories', 'categories')) as {name: string, color: string}[];
