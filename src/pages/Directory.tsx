@@ -172,7 +172,7 @@ export default function Directory() {
                     <div className="flex flex-col sm:flex-row gap-2 pt-4">
                       <a 
                         href={`tel:${company.phone}`}
-                        className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white py-3 rounded-sm font-bold text-xs hover:bg-black transition-all whitespace-nowrap"
+                        className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white py-3 px-4 rounded-sm font-bold text-xs hover:bg-black transition-all whitespace-nowrap"
                       >
                         <Phone size={14} />
                         ARA
@@ -181,7 +181,7 @@ export default function Directory() {
                         href={`https://wa.me/${company.whatsapp.replace(/\D/g, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-sm font-bold text-xs hover:bg-[#128C7E] transition-all whitespace-nowrap"
+                        className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 px-4 rounded-sm font-bold text-xs hover:bg-[#128C7E] transition-all whitespace-nowrap"
                       >
                         <MessageCircle size={14} />
                         WHATSAPP
