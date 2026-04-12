@@ -77,106 +77,108 @@ export default function Header() {
 
   return (
     <header className="w-full">
-      {/* Top Red Bar */}
-      <div className="bg-[#e60026] text-white py-2 text-[10px] sm:text-xs">
-        <div className="max-w-[1280px] mx-auto flex justify-between items-center px-2 sm:px-4">
-          <div className="flex space-x-2 sm:space-x-4">
-            {leftLinks.map((link) => (
-              <Link 
-                key={link.id} 
-                to={link.url} 
-                className={`px-2 sm:px-3 py-1 rounded font-black flex items-center gap-1 ${link.id === 'kunye' ? 'bg-white text-[#e60026]' : 'border border-white'}`}
-              >
-                {renderIcon(link.icon)}
-                {link.title}
-              </Link>
-            ))}
-          </div>
-          <div className="hidden md:flex items-center gap-6 ml-auto">
-            <div className="flex space-x-6 items-center">
-              {rightLinks.map((link) => (
-                <Link key={link.id} to={link.url} className="flex items-center gap-1 hover:opacity-80 transition-opacity font-black">
+      <div className={`w-full transition-all duration-300 ${isSticky ? 'fixed top-0 left-0 z-50 shadow-md' : 'relative'}`}>
+        {/* Top Red Bar */}
+        <div className="bg-[#e60026] text-white py-2 text-[10px] sm:text-xs">
+          <div className="max-w-[1280px] mx-auto flex justify-between items-center px-2 sm:px-4">
+            <div className="flex space-x-2 sm:space-x-4">
+              {leftLinks.map((link) => (
+                <Link 
+                  key={link.id} 
+                  to={link.url} 
+                  className={`px-2 sm:px-3 py-1 rounded font-black flex items-center gap-1 ${link.id === 'kunye' ? 'bg-white text-[#e60026]' : 'border border-white'}`}
+                >
                   {renderIcon(link.icon)}
                   {link.title}
                 </Link>
               ))}
             </div>
-            <div className="flex items-center gap-4 border-l border-white/20 pl-6">
-               <Search size={18} className="cursor-pointer hover:scale-110 transition-transform" />
-               <Menu size={18} className="cursor-pointer hover:scale-110 transition-transform" onClick={() => setIsMenuOpen(!isMenuOpen)} />
+            <div className="hidden md:flex items-center gap-6 ml-auto">
+              <div className="flex space-x-6 items-center">
+                {rightLinks.map((link) => (
+                  <Link key={link.id} to={link.url} className="flex items-center gap-1 hover:opacity-80 transition-opacity font-black">
+                    {renderIcon(link.icon)}
+                    {link.title}
+                  </Link>
+                ))}
+              </div>
+              <div className="flex items-center gap-4 border-l border-white/20 pl-6">
+                 <Search size={18} className="cursor-pointer hover:scale-110 transition-transform" />
+                 <Menu size={18} className="cursor-pointer hover:scale-110 transition-transform" onClick={() => setIsMenuOpen(!isMenuOpen)} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Header */}
+        <div className="w-full bg-white border-b border-gray-100">
+          <div className={`max-w-[1280px] mx-auto flex justify-between items-center px-2 sm:px-4 transition-all duration-300 ${isSticky ? 'py-2 md:py-3' : 'py-2 md:py-6'}`}>
+            <Link to="/" className="flex items-center">
+              {logoUrl && (
+                <img src={normalizeImageUrl(logoUrl)} alt={siteName} className="w-auto max-h-7 md:max-h-9 object-contain" loading="eager" />
+              )}
+              {!logoUrl && (
+                <div className="text-lg md:text-xl font-bold">
+                  <span className="text-gray-600">MEGA</span>
+                  <span className="bg-[#e60026] text-white px-2 py-1 ml-1 rounded">HABER</span>
+                </div>
+              )}
+            </Link>
+            
+            {/* Desktop Nav */}
+            <nav className="hidden lg:flex space-x-6 text-[16px] font-bold text-gray-800 font-['Roboto'] items-center">
+              {/* Home Link */}
+              {(menus || []).filter(m => m.id === 'home').map((menu: any) => (
+                <Link key={menu.id} to={menu.url} className="hover:text-[#e60026]">{menu.title?.toUpperCase()}</Link>
+              ))}
+
+              {/* Categories */}
+              {visibleCategories.map((cat: any) => (
+                <Link key={cat.id} to={`/category/${slugify(cat.name || '')}`} className="hover:text-[#e60026]">
+                  {cat.name?.toUpperCase()}
+                </Link>
+              ))}
+
+              {/* Dropdown for more categories */}
+              {dropdownCategories.length > 0 && (
+                <div className="relative group">
+                  <button className="flex items-center gap-1 hover:text-[#e60026] uppercase">
+                    DİĞER <ChevronDown size={16} />
+                  </button>
+                  <div className="absolute top-full left-0 bg-white shadow-xl border border-gray-100 py-2 min-w-[200px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                    {dropdownCategories.map((cat: any) => (
+                      <Link 
+                        key={cat.id} 
+                        to={`/category/${slugify(cat.name || '')}`} 
+                        className="block px-4 py-2 hover:bg-gray-50 hover:text-[#e60026] transition-colors"
+                      >
+                        {cat.name?.toUpperCase()}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Other dynamic menus */}
+              {(menus || []).filter(m => m.id !== 'home').map((menu: any) => (
+                <Link key={menu.id} to={menu.url} className="hover:text-[#e60026]">{menu.title?.toUpperCase()}</Link>
+              ))}
+              
+              <Search key="search" size={20} className="cursor-pointer" />
+              <Menu key="menu" size={20} className="cursor-pointer" onClick={() => setIsMenuOpen(!isMenuOpen)} />
+            </nav>
+
+            {/* Mobile Menu Toggle (Visible on Tablet/Mobile) */}
+            <div className="lg:hidden flex items-center gap-4">
+               <Search size={22} className="cursor-pointer text-gray-700" />
+               <Menu size={22} className="cursor-pointer text-gray-700" onClick={() => setIsMenuOpen(!isMenuOpen)} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Header */}
-      <div className={`w-full bg-white border-b border-gray-100 transition-all duration-300 ${isSticky ? 'fixed top-0 left-0 z-50 shadow-md' : 'relative'}`}>
-        <div className={`max-w-[1280px] mx-auto flex justify-between items-center px-2 sm:px-4 transition-all duration-300 ${isSticky ? 'py-2 md:py-3' : 'py-2 md:py-6'}`}>
-          <Link to="/" className="flex items-center">
-            {logoUrl && (
-              <img src={normalizeImageUrl(logoUrl)} alt={siteName} className="w-auto max-h-7 md:max-h-9 object-contain" loading="eager" />
-            )}
-            {!logoUrl && (
-              <div className="text-lg md:text-xl font-bold">
-                <span className="text-gray-600">MEGA</span>
-                <span className="bg-[#e60026] text-white px-2 py-1 ml-1 rounded">HABER</span>
-              </div>
-            )}
-          </Link>
-          
-          {/* Desktop Nav */}
-          <nav className="hidden lg:flex space-x-6 text-[16px] font-bold text-gray-800 font-['Roboto'] items-center">
-            {/* Home Link */}
-            {(menus || []).filter(m => m.id === 'home').map((menu: any) => (
-              <Link key={menu.id} to={menu.url} className="hover:text-[#e60026]">{menu.title?.toUpperCase()}</Link>
-            ))}
-
-            {/* Categories */}
-            {visibleCategories.map((cat: any) => (
-              <Link key={cat.id} to={`/category/${slugify(cat.name || '')}`} className="hover:text-[#e60026]">
-                {cat.name?.toUpperCase()}
-              </Link>
-            ))}
-
-            {/* Dropdown for more categories */}
-            {dropdownCategories.length > 0 && (
-              <div className="relative group">
-                <button className="flex items-center gap-1 hover:text-[#e60026] uppercase">
-                  DİĞER <ChevronDown size={16} />
-                </button>
-                <div className="absolute top-full left-0 bg-white shadow-xl border border-gray-100 py-2 min-w-[200px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                  {dropdownCategories.map((cat: any) => (
-                    <Link 
-                      key={cat.id} 
-                      to={`/category/${slugify(cat.name || '')}`} 
-                      className="block px-4 py-2 hover:bg-gray-50 hover:text-[#e60026] transition-colors"
-                    >
-                      {cat.name?.toUpperCase()}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Other dynamic menus */}
-            {(menus || []).filter(m => m.id !== 'home').map((menu: any) => (
-              <Link key={menu.id} to={menu.url} className="hover:text-[#e60026]">{menu.title?.toUpperCase()}</Link>
-            ))}
-            
-            <Search key="search" size={20} className="cursor-pointer" />
-            <Menu key="menu" size={20} className="cursor-pointer" onClick={() => setIsMenuOpen(!isMenuOpen)} />
-          </nav>
-
-          {/* Mobile Menu Toggle (Visible on Tablet/Mobile) */}
-          <div className="lg:hidden flex items-center gap-4">
-             <Search size={22} className="cursor-pointer text-gray-700" />
-             <Menu size={22} className="cursor-pointer text-gray-700" onClick={() => setIsMenuOpen(!isMenuOpen)} />
-          </div>
-        </div>
-      </div>
-
       {/* Spacer to prevent content jump */}
-      {isSticky && <div className="h-[52px] md:h-[84px]"></div>}
+      {isSticky && <div className="h-[84px] md:h-[132px]"></div>}
 
       {/* Mobile Menu Drawer */}
       <AnimatePresence>
