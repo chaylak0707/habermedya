@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { db } from '../db';
+import { storage } from '../firebase';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useAppData } from '../AppDataContext';
 import { fetchWithCache, clearCache, normalizeImageUrl } from '../lib/utils';
 import ReactQuill from 'react-quill-new';
@@ -170,10 +172,10 @@ const ServiceImageUpload = ({
   const [isUploading, setIsUploading] = useState(false);
 
   return (
-    <div className="mt-4 p-4 bg-white rounded-sm border border-gray-100">
-      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{label}</label>
-      <div className="flex items-center gap-4">
-        <div className="relative w-16 h-16 flex-shrink-0 group">
+    <div className="mt-4 p-3 bg-white rounded-sm border border-gray-100">
+      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{label}</label>
+      <div className="flex items-center gap-3">
+        <div className="relative w-12 h-12 flex-shrink-0 group">
           {value ? (
             <>
               <img 
@@ -184,19 +186,19 @@ const ServiceImageUpload = ({
               <button 
                 type="button"
                 onClick={() => onChange('')}
-                className="absolute -top-2 -right-2 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                className="absolute -top-1.5 -right-1.5 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"
               >
-                <X size={12} />
+                <X size={10} />
               </button>
             </>
           ) : (
             <div className="w-full h-full bg-gray-50 border-2 border-dashed border-gray-200 rounded-sm flex items-center justify-center text-gray-300">
-              <ImageIcon size={20} />
+              <ImageIcon size={16} />
             </div>
           )}
           {isUploading && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-sm">
-              <Loader2 size={16} className="animate-spin text-red-600" />
+              <Loader2 size={14} className="animate-spin text-red-600" />
             </div>
           )}
         </div>
@@ -217,9 +219,9 @@ const ServiceImageUpload = ({
                 }
               }
             }}
-            className="block w-full text-[10px] text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-[10px] file:font-black file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer"
+            className="block w-full text-[9px] text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-sm file:border-0 file:text-[9px] file:font-black file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer"
           />
-          <p className="text-[9px] text-gray-400 mt-1 font-medium italic">Önerilen boyut: 800x1040px (Dikey)</p>
+          <p className="text-[8px] text-gray-400 mt-0.5 font-medium italic">Önerilen boyut: 800x1040px</p>
         </div>
       </div>
     </div>
@@ -402,7 +404,7 @@ export default function Admin() {
     if (!admin) return;
     try {
       // Admin panel should always get fresh data
-      const articlesResult = await db.execute("SELECT * FROM articles");
+      const articlesResult = await db.execute("SELECT * FROM articles ORDER BY createdAt DESC");
       setArticles((articlesResult.rows as any[]).map(article => ({
         ...article,
         isActive: !!article.isActive,
@@ -540,20 +542,26 @@ export default function Admin() {
 
   const deleteFile = async (filePath: string) => {
     if (!filePath) return;
-    
-    // If it's a Firebase Storage URL
+
+    // Firebase Storage deletion
     if (filePath.includes('firebasestorage.googleapis.com')) {
       try {
-        // We don't necessarily need to delete from Firebase Storage in this simple implementation
-        // but we could if we wanted to. For now, just logging.
-        console.log('Firebase file deletion requested for:', filePath);
+        // Extract path from URL
+        const decodedUrl = decodeURIComponent(filePath);
+        const pathStart = decodedUrl.indexOf('/o/') + 3;
+        const pathEnd = decodedUrl.indexOf('?');
+        const fullPath = decodedUrl.substring(pathStart, pathEnd);
+        
+        const fileRef = ref(storage, fullPath);
+        await deleteObject(fileRef);
+        console.log('Firebase file deleted successfully');
       } catch (error) {
         console.error('Error deleting Firebase file:', error);
       }
       return;
     }
 
-    // Legacy local file deletion
+    // Legacy local file deletion fallback
     if (filePath.startsWith('/uploads/')) {
       try {
         await fetch('/api/delete-file', {
@@ -569,38 +577,29 @@ export default function Admin() {
 
   const uploadWithProgress = (file: File, onProgress: (percent: number) => void): Promise<string> => {
     return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      const formData = new FormData();
-      formData.append('file', file);
+      // Use Firebase Storage for reliable persistence on Cloud Run
+      const fileName = `${Date.now()}-${file.name}`;
+      const storageRef = ref(storage, `uploads/${fileName}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const percent = Math.round((event.loaded / event.total) * 100);
-          onProgress(percent);
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          onProgress(Math.round(progress));
+        }, 
+        (error) => {
+          console.error('Firebase upload error:', error);
+          reject(new Error('Yükleme hatası: ' + error.message));
+        }, 
+        async () => {
           try {
-            const response = JSON.parse(xhr.responseText);
-            resolve(response.url);
-          } catch (e) {
-            reject(new Error('Geçersiz sunucu yanıtı'));
-          }
-        } else {
-          try {
-            const errorData = JSON.parse(xhr.responseText);
-            reject(new Error(errorData.error || 'Yükleme başarısız oldu'));
-          } catch (e) {
-            reject(new Error(`Yükleme hatası: ${xhr.statusText}`));
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(downloadURL);
+          } catch (err) {
+            reject(new Error('URL alınamadı'));
           }
         }
-      };
-
-      xhr.onerror = () => reject(new Error('Ağ hatası oluştu'));
-      xhr.open('POST', '/api/upload');
-      xhr.send(formData);
+      );
     });
   };
 
@@ -708,12 +707,12 @@ export default function Admin() {
     e.preventDefault();
     setIsSaving(true);
 
-    // Check for base64 images in content which cause 413 error
-    if (content.includes('src="data:image')) {
+    // Check for base64 images in content or main image which cause 413 error
+    if (content.includes('src="data:image') || (imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('data:image'))) {
       const proceed = window.confirm(
-        'Haber içeriğinde doğrudan yapıştırılmış (base64) görseller tespit edildi. ' +
+        'Haber içeriğinde veya ana görselinde doğrudan yapıştırılmış (base64) görseller tespit edildi. ' +
         'Bu durum kaydetme sırasında "413 Payload Too Large" hatasına neden olabilir. ' +
-        'Görselleri "Görsel Ekle" butonu ile yüklemeniz önerilir. Devam etmek istiyor musunuz?'
+        'Görselleri "Yükle" butonu ile yüklemeniz önerilir. Devam etmek istiyor musunuz?'
       );
       if (!proceed) {
         setIsSaving(false);
@@ -893,7 +892,7 @@ export default function Admin() {
       { name: 'Sonuçlar Arkaplan', value: resultsBg }
     ];
 
-    const base64Field = fields.find(f => f.value && f.value.startsWith('data:image'));
+    const base64Field = fields.find(f => f.value && typeof f.value === 'string' && f.value.startsWith('data:image'));
     if (base64Field) {
       alert(`Hata: ${base64Field.name} görseli URL yerine veri (base64) olarak eklenmiş. Lütfen bu görseli "Yükle" butonu ile yükleyin. Doğrudan yapıştırma 413 (Payload Too Large) hatasına neden olur.`);
       setIsSaving(false);
@@ -927,6 +926,21 @@ export default function Admin() {
   const handleAdsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingAds(true);
+
+    // Check for base64 images which cause 413 error
+    const adFields = [
+      { name: 'Ana Sayfa Reklam', value: homeAd.imageUrl },
+      { name: 'Ana Sayfa Üst Reklam', value: homeTopAd.imageUrl },
+      { name: 'Haber Detay Reklam', value: detailAd.imageUrl }
+    ];
+
+    const base64Ad = adFields.find(f => f.value && typeof f.value === 'string' && f.value.startsWith('data:image'));
+    if (base64Ad) {
+      alert(`Hata: ${base64Ad.name} görseli URL yerine veri (base64) olarak eklenmiş. Lütfen bu görseli "Yükle" butonu ile yükleyin.`);
+      setIsSavingAds(false);
+      return;
+    }
+
     try {
       console.log('Saving ads...', { homeAd, homeTopAd, detailAd });
       
@@ -962,6 +976,12 @@ export default function Admin() {
 
   const handleSidebarAdSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (newSidebarAd.imageUrl && typeof newSidebarAd.imageUrl === 'string' && newSidebarAd.imageUrl.startsWith('data:image')) {
+      alert('Hata: Sidebar reklam görseli URL yerine veri (base64) olarak eklenmiş. Lütfen yükle butonu ile yükleyin.');
+      return;
+    }
+
     try {
       await db.execute({
         sql: "INSERT INTO sidebarAds (id, type, imageUrl, adCode, link) VALUES (?, ?, ?, ?, ?)",
@@ -1496,6 +1516,13 @@ export default function Admin() {
   const handleCompanySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingCompany(true);
+
+    if (companyLogoPreview && typeof companyLogoPreview === 'string' && companyLogoPreview.startsWith('data:image')) {
+      alert('Hata: Firma logosu URL yerine veri (base64) olarak eklenmiş. Lütfen yükle butonu ile yükleyin.');
+      setIsSavingCompany(false);
+      return;
+    }
+
     try {
       const data = new FormData();
       Object.entries(companyFormData).forEach(([key, value]) => {
