@@ -183,9 +183,9 @@ export default function NewsDetail(props: { onReady: () => void }) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-8">
-          <article className="bg-white p-6 md:p-8 rounded-sm shadow-sm border border-gray-100">
+          <article className="bg-white p-0 sm:p-6 md:p-8 rounded-sm shadow-sm border border-gray-100 overflow-hidden">
             {/* Header Info */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 px-4 sm:px-0 pt-4 sm:pt-0">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-4" style={{ backgroundColor: categories.find(c => c.name === article.category)?.color || '#e60026' }}></div>
                 <div className="w-1 h-4" style={{ backgroundColor: categories.find(c => c.name === article.category)?.color || '#e60026' }}></div>
@@ -196,11 +196,11 @@ export default function NewsDetail(props: { onReady: () => void }) {
               </div>
             </div>
 
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight px-4 sm:px-0">
               {article.title}
             </h1>
 
-            <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 mb-8 pb-4 border-b border-gray-50">
+            <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 mb-8 pb-4 border-b border-gray-50 px-4 sm:px-0">
               <div className="flex items-center gap-1">
                 <User size={14} className="text-gray-400" />
                 <span className="font-bold text-gray-700">{article.author}</span>
@@ -244,7 +244,7 @@ export default function NewsDetail(props: { onReady: () => void }) {
 
             {/* Content */}
             <div 
-              className="prose prose-lg max-w-none text-gray-800 leading-relaxed ql-editor news-content mb-12"
+              className="prose prose-lg max-w-none text-gray-800 leading-relaxed ql-editor news-content mb-12 px-4 sm:px-0"
               lang="tr"
             >
               <div dangerouslySetInnerHTML={{ __html: formatTurkishContent(article.content) }} />
@@ -252,7 +252,7 @@ export default function NewsDetail(props: { onReady: () => void }) {
 
             {/* Gallery */}
             {article.gallery && article.gallery.length > 0 && (
-              <div className="mb-12">
+              <div className="mb-12 px-4 sm:px-0">
                 <h3 className="text-xl font-bold mb-6 pb-2 border-b-2 border-gray-800 inline-block">Haber Galerisi</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {article.gallery.map((img, idx) => img && (
@@ -265,7 +265,7 @@ export default function NewsDetail(props: { onReady: () => void }) {
             )}
 
             {/* Social Share */}
-            <div className="flex flex-wrap gap-2 mb-12 py-6 border-t border-gray-100">
+            <div className="flex flex-wrap gap-2 mb-12 py-6 border-t border-gray-100 px-4 sm:px-0">
               <button className="bg-[#3b5998] text-white p-2 rounded hover:opacity-90 transition-opacity"><Facebook size={20} /></button>
               <button className="bg-[#1da1f2] text-white p-2 rounded hover:opacity-90 transition-opacity"><Twitter size={20} /></button>
               <button className="bg-[#bd081c] text-white p-2 rounded hover:opacity-90 transition-opacity"><Share2 size={20} /></button>
@@ -274,7 +274,7 @@ export default function NewsDetail(props: { onReady: () => void }) {
             </div>
 
             {/* Reactions */}
-            <div className="bg-gray-50 p-6 rounded-lg mb-12">
+            <div className="bg-gray-50 p-4 md:p-6 rounded-lg mb-12 mx-4 sm:mx-0">
               <div className="flex justify-center gap-4 md:gap-8 flex-wrap">
                 {[
                   { label: 'Beğendim', emoji: '😊' },
@@ -306,7 +306,7 @@ export default function NewsDetail(props: { onReady: () => void }) {
             </div>
 
             {/* Comment Form */}
-            <div className="mb-12">
+            <div className="mb-12 px-4 sm:px-0">
               <h3 className="text-xl font-bold mb-6 pb-2 border-b-2 border-gray-800 inline-block">Yorum Gönder</h3>
               <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input type="text" placeholder="Adınız Soyadınız *" className="p-3 border border-gray-200 rounded focus:ring-1 focus:ring-red-500 outline-none text-sm" />
@@ -317,7 +317,7 @@ export default function NewsDetail(props: { onReady: () => void }) {
             </div>
 
             {/* Comments List */}
-            <div>
+            <div className="px-4 sm:px-0 pb-8 sm:pb-0">
               <h3 className="text-xl font-bold mb-6 pb-2 border-b-2 border-gray-800 inline-block">Yorumlar</h3>
               <div className="bg-blue-50 p-4 rounded text-blue-800 text-sm italic">
                 Henüz yorum yapılmamış. <span className="font-bold cursor-pointer hover:underline">İlk yorumu sen yap!</span>
