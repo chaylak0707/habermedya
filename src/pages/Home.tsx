@@ -170,7 +170,7 @@ export default function Home() {
               className="flex-1 flex flex-col"
             >
               <Link to={mainArticle ? `/news/${mainArticle.id}` : "#"} className="block group flex-1 flex flex-col">
-                <div className="relative flex-1 min-h-[300px] sm:min-h-[350px] md:min-h-[435px] bg-gray-300 rounded-sm overflow-hidden">
+                <div className="relative flex-1 min-h-[300px] sm:min-h-[350px] md:min-h-[435px] overflow-hidden">
                   <img 
                     src={normalizeImageUrl(mainArticle?.imageUrl)} 
                     alt={mainArticle?.title || "Manşet"} 
@@ -181,11 +181,11 @@ export default function Home() {
                       e.currentTarget.src = "https://picsum.photos/seed/news-fallback/1200/600";
                     }}
                   />
-                  <div className="absolute bottom-0 left-0 w-full bg-transparent md:bg-gradient-to-t md:from-black/95 md:via-black/50 md:to-transparent p-4 md:p-8 text-white">
-                    <span className="px-2 py-1 cat-label font-bold mb-2 inline-block rounded-sm" style={{ backgroundColor: categories.find(c => c.name === (mainArticle?.category || 'SİYASET'))?.color || '#e60026' }}>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent p-4 md:p-8 text-white z-10">
+                    <span className="px-2 py-1 cat-label font-bold mb-2 inline-block rounded-sm text-shadow-news" style={{ backgroundColor: categories.find(c => c.name === (mainArticle?.category || 'SİYASET'))?.color || '#e60026' }}>
                       {mainArticle?.category?.toUpperCase() || 'SİYASET'}
                     </span>
-                    <h1 className="text-base sm:text-lg md:text-2xl font-bold mb-2 group-hover:text-red-400 transition-colors line-clamp-2 leading-tight text-shadow-news">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 group-hover:text-red-400 transition-colors line-clamp-2 leading-tight text-shadow-news">
                       {mainArticle?.title}
                     </h1>
                     <div className="flex items-center gap-2 text-[10px] md:text-sm opacity-90 font-medium text-shadow-news">
@@ -273,7 +273,7 @@ export default function Home() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
           {featuredArticles.map((news) => (
-            <Link key={news.id} to={`/news/${news.id}`} className="relative aspect-video overflow-hidden rounded-sm shadow-sm border border-gray-100 group">
+            <Link key={news.id} to={`/news/${news.id}`} className="relative aspect-video overflow-hidden rounded-sm group">
               <img 
                 src={normalizeImageUrl(news.imageUrl) || 'https://picsum.photos/seed/f/400/250'} 
                 alt={news.title} 
@@ -284,16 +284,16 @@ export default function Home() {
                   e.currentTarget.src = "https://picsum.photos/seed/news-fallback/400/250";
                 }}
               />
-              <div className="absolute inset-0 bg-transparent md:bg-gradient-to-t md:from-black/80 md:via-black/40 md:to-transparent flex flex-col justify-end p-4 text-white">
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-4 text-white z-10">
                 <div className="flex items-center justify-between mb-2 text-shadow-news">
-                  <span className="px-2 py-0.5 cat-label font-bold text-white uppercase rounded-sm" style={{ backgroundColor: categories.find(c => c.name === news.category)?.color || '#e60026' }}>
+                  <span className="px-2 py-0.5 cat-label font-bold text-white uppercase rounded-sm text-shadow-news" style={{ backgroundColor: categories.find(c => c.name === news.category)?.color || '#e60026' }}>
                     {news.category}
                   </span>
                   <div className="flex items-center gap-1 text-[10px] text-white/90 font-medium">
                     <Clock size={12} className="w-3 h-3" /> {new Date(news.createdAt).toLocaleDateString('tr-TR')}
                   </div>
                 </div>
-                <h3 className="text-sm md:text-base font-bold text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug text-shadow-news">
+                <h3 className="text-lg md:text-xl font-bold text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug text-shadow-news">
                   {news.title}
                 </h3>
               </div>
@@ -362,7 +362,7 @@ export default function Home() {
                   {firstArticle ? (
                     <>
                       {/* Main Category Article */}
-                      <Link to={`/news/${firstArticle.id}`} className="block group relative aspect-[16/10] overflow-hidden rounded-sm shadow-sm">
+                      <Link to={`/news/${firstArticle.id}`} className="block group relative aspect-[16/10] overflow-hidden rounded-sm">
                         <img 
                           src={normalizeImageUrl(firstArticle.imageUrl) || 'https://picsum.photos/seed/cat/400/300'} 
                           alt={firstArticle.title} 
@@ -373,12 +373,12 @@ export default function Home() {
                             e.currentTarget.src = "https://picsum.photos/seed/news-fallback/400/300";
                           }}
                         />
-                        <div className="absolute inset-0 bg-transparent md:bg-gradient-to-t md:from-black/90 md:via-black/40 md:to-transparent flex flex-col justify-end p-4">
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent flex flex-col justify-end p-4 z-10">
                           <div className="flex items-center gap-1.5 text-[11px] text-white/90 mb-2 font-medium text-shadow-news">
                             <Clock size={13} className="text-white/80" />
                             {new Date(firstArticle.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }) + ', ' + new Date(firstArticle.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
                           </div>
-                          <h4 className="text-white font-bold text-lg leading-tight group-hover:text-red-400 transition-colors line-clamp-3 text-shadow-news">
+                          <h4 className="text-white font-bold text-xl leading-tight group-hover:text-red-400 transition-colors line-clamp-3 text-shadow-news">
                             {firstArticle.title}
                           </h4>
                         </div>
