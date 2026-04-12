@@ -22,6 +22,19 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [breakingNewsIndex, setBreakingNewsIndex] = useState(0);
   const [topMenuLinks, setTopMenuLinks] = useState<TopMenuLink[]>([]);
+  const [isSticky, setIsSticky] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 40) {
+        setIsSticky(true);
+      } else {
+        setIsSticky(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const breakingNews = (articles || []).filter((a: any) => a.isActive && a.displayOptions?.isBreaking);
   const menuCategories = (categories || []).filter((c: any) => c.showInMenu && c.isActive);
@@ -97,8 +110,8 @@ export default function Header() {
       </div>
 
       {/* Main Header */}
-      <div className="w-full bg-white border-b border-gray-100">
-        <div className="max-w-[1280px] mx-auto flex justify-between items-center py-2 md:py-6 px-2 sm:px-4">
+      <div className={`w-full bg-white border-b border-gray-100 transition-all duration-300 ${isSticky ? 'fixed top-0 left-0 z-50 shadow-md' : 'relative'}`}>
+        <div className={`max-w-[1280px] mx-auto flex justify-between items-center px-2 sm:px-4 transition-all duration-300 ${isSticky ? 'py-2 md:py-3' : 'py-2 md:py-6'}`}>
           <Link to="/" className="flex items-center">
             {logoUrl && (
               <img src={normalizeImageUrl(logoUrl)} alt={siteName} className="w-auto max-h-7 md:max-h-9 object-contain" loading="eager" />
@@ -161,6 +174,9 @@ export default function Header() {
           </div>
         </div>
       </div>
+
+      {/* Spacer to prevent content jump */}
+      {isSticky && <div className="h-[52px] md:h-[84px]"></div>}
 
       {/* Mobile Menu Drawer */}
       <AnimatePresence>
