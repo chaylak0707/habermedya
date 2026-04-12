@@ -181,14 +181,14 @@ export default function Home() {
                       e.currentTarget.src = "https://picsum.photos/seed/news-fallback/1200/600";
                     }}
                   />
-                  <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 via-black/30 to-transparent md:from-black/95 md:via-black/50 md:to-transparent p-4 md:p-8 text-white">
+                  <div className="absolute bottom-0 left-0 w-full bg-transparent md:bg-gradient-to-t md:from-black/95 md:via-black/50 md:to-transparent p-4 md:p-8 text-white">
                     <span className="px-2 py-1 cat-label font-bold mb-2 inline-block rounded-sm" style={{ backgroundColor: categories.find(c => c.name === (mainArticle?.category || 'SİYASET'))?.color || '#e60026' }}>
                       {mainArticle?.category?.toUpperCase() || 'SİYASET'}
                     </span>
-                    <h1 className="text-base sm:text-lg md:text-2xl font-bold mb-2 group-hover:text-red-400 transition-colors line-clamp-2 leading-tight">
+                    <h1 className="text-base sm:text-lg md:text-2xl font-bold mb-2 group-hover:text-red-400 transition-colors line-clamp-2 leading-tight text-shadow-news">
                       {mainArticle?.title}
                     </h1>
-                    <div className="flex items-center gap-2 text-[10px] md:text-sm opacity-90 font-medium">
+                    <div className="flex items-center gap-2 text-[10px] md:text-sm opacity-90 font-medium text-shadow-news">
                       <Clock size={14} className="w-3 h-3 md:w-4 md:h-4" /> 
                       {mainArticle ? new Date(mainArticle.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
                     </div>
@@ -273,29 +273,27 @@ export default function Home() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
           {featuredArticles.map((news) => (
-            <Link key={news.id} to={`/news/${news.id}`} className="bg-white shadow-sm border border-gray-200 group flex flex-col">
-              <div className="relative aspect-video overflow-hidden">
-                <img 
-                  src={normalizeImageUrl(news.imageUrl) || 'https://picsum.photos/seed/f/400/250'} 
-                  alt={news.title} 
-                  className="news-image transition-transform duration-500 group-hover:scale-105" 
-                  referrerPolicy="no-referrer"
-                  loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.src = "https://picsum.photos/seed/news-fallback/400/250";
-                  }}
-                />
-              </div>
-              <div className="p-3 md:p-4 flex-1 flex flex-col">
-                <div className="flex items-center justify-between mb-2">
+            <Link key={news.id} to={`/news/${news.id}`} className="relative aspect-video overflow-hidden rounded-sm shadow-sm border border-gray-100 group">
+              <img 
+                src={normalizeImageUrl(news.imageUrl) || 'https://picsum.photos/seed/f/400/250'} 
+                alt={news.title} 
+                className="w-full h-full absolute inset-0 object-cover transition-transform duration-500 group-hover:scale-105" 
+                referrerPolicy="no-referrer"
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.src = "https://picsum.photos/seed/news-fallback/400/250";
+                }}
+              />
+              <div className="absolute inset-0 bg-transparent md:bg-gradient-to-t md:from-black/80 md:via-black/40 md:to-transparent flex flex-col justify-end p-4 text-white">
+                <div className="flex items-center justify-between mb-2 text-shadow-news">
                   <span className="px-2 py-0.5 cat-label font-bold text-white uppercase rounded-sm" style={{ backgroundColor: categories.find(c => c.name === news.category)?.color || '#e60026' }}>
                     {news.category}
                   </span>
-                  <div className="flex items-center gap-1 text-[9px] md:text-[10px] text-gray-400 font-medium">
+                  <div className="flex items-center gap-1 text-[10px] text-white/90 font-medium">
                     <Clock size={12} className="w-3 h-3" /> {new Date(news.createdAt).toLocaleDateString('tr-TR')}
                   </div>
                 </div>
-                <h3 className="text-sm md:text-base font-bold text-gray-800 group-hover:text-[#e60026] transition-colors line-clamp-2 leading-snug">
+                <h3 className="text-sm md:text-base font-bold text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug text-shadow-news">
                   {news.title}
                 </h3>
               </div>
@@ -375,12 +373,12 @@ export default function Home() {
                             e.currentTarget.src = "https://picsum.photos/seed/news-fallback/400/300";
                           }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent md:from-black/90 md:via-black/40 md:to-transparent flex flex-col justify-end p-4">
-                          <div className="flex items-center gap-1.5 text-[11px] text-white/90 mb-2 font-medium">
+                        <div className="absolute inset-0 bg-transparent md:bg-gradient-to-t md:from-black/90 md:via-black/40 md:to-transparent flex flex-col justify-end p-4">
+                          <div className="flex items-center gap-1.5 text-[11px] text-white/90 mb-2 font-medium text-shadow-news">
                             <Clock size={13} className="text-white/80" />
                             {new Date(firstArticle.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }) + ', ' + new Date(firstArticle.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
                           </div>
-                          <h4 className="text-white font-bold text-lg leading-tight group-hover:text-red-400 transition-colors line-clamp-3">
+                          <h4 className="text-white font-bold text-lg leading-tight group-hover:text-red-400 transition-colors line-clamp-3 text-shadow-news">
                             {firstArticle.title}
                           </h4>
                         </div>
