@@ -32,7 +32,7 @@ function AppContent({ data }: { data: any }) {
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <ScrollToTop />
       {!isAdminPage && <Header />}
-      <main className={isAdminPage ? "flex-1" : "max-w-[1280px] mx-auto px-2 sm:px-4 py-4 sm:py-8 flex-1"}>
+      <main className={isAdminPage ? "flex-1" : "max-w-[1280px] mx-auto px-3 sm:px-4 py-4 sm:py-8 flex-1"}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/admin" element={<Admin />} />
