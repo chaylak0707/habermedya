@@ -42,6 +42,8 @@ export default function Home() {
   const [articles, setArticles] = useState<Article[]>(initialArticles);
   const [categories, setCategories] = useState<{name: string, color: string, showOnHomepage?: boolean}[]>([]);
   const [homeAd, setHomeAd] = useState<AdConfig | null>(null);
+  const [homeSliderBottomAd, setHomeSliderBottomAd] = useState<AdConfig | null>(null);
+  const [homeGalleryBottomAd, setHomeGalleryBottomAd] = useState<AdConfig | null>(null);
   const [activeSliderIndex, setActiveSliderIndex] = useState(0);
   const [siteConfig, setSiteConfig] = useState<{siteTitle?: string, siteDescription?: string, siteKeywords?: string} | null>(null);
 
@@ -118,12 +120,20 @@ export default function Home() {
           
           const home = ads.find(a => a.id === 'home');
           if (home) setHomeAd(home);
+
+          const sliderBottom = ads.find(a => a.id === 'home_slider_bottom');
+          if (sliderBottom) setHomeSliderBottomAd(sliderBottom);
+
+          const galleryBottom = ads.find(a => a.id === 'home_gallery_bottom');
+          if (galleryBottom) setHomeGalleryBottomAd(galleryBottom);
         } else {
           // Fallback to direct fetch if cache is invalid
           const adResult = await db.execute("SELECT * FROM ads");
           if (adResult && adResult.rows) {
             adResult.rows.forEach((row: any) => {
               if (row.id === 'home') setHomeAd(row);
+              if (row.id === 'home_slider_bottom') setHomeSliderBottomAd(row);
+              if (row.id === 'home_gallery_bottom') setHomeGalleryBottomAd(row);
             });
           }
         }
@@ -257,6 +267,30 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Manşet Altı Reklam Alanı */}
+      <div className="mb-8 bg-white border border-gray-200 flex items-center justify-center overflow-hidden min-h-[100px] md:min-h-[160px] shadow-sm rounded-sm">
+        {homeSliderBottomAd && homeSliderBottomAd.type === 'image' && homeSliderBottomAd.imageUrl ? (
+          <a href={homeSliderBottomAd.link || '#'} target="_blank" rel="noopener noreferrer" className="block w-full">
+            <img 
+              src={normalizeImageUrl(homeSliderBottomAd.imageUrl)} 
+              alt="Reklam" 
+              className="w-full h-auto min-h-[100px] md:h-[160px] object-cover" 
+              referrerPolicy="no-referrer" 
+              loading="lazy" 
+            />
+          </a>
+        ) : homeSliderBottomAd && homeSliderBottomAd.type === 'code' && homeSliderBottomAd.adCode ? (
+          <div 
+            className="w-full flex justify-center"
+            dangerouslySetInnerHTML={{ __html: homeSliderBottomAd.adCode }}
+          />
+        ) : (
+          <div className="text-gray-200 font-bold text-lg md:text-2xl uppercase tracking-widest">
+            Manşet Altı Reklam Alanı
+          </div>
+        )}
+      </div>
+
       {/* Service Cards */}
       <ServiceCards />
 
@@ -264,47 +298,49 @@ export default function Home() {
       <MarketBar />
 
       {/* Öne Çıkan Haberler */}
-      <div className="relative mb-6">
-        <div className="flex items-center border-b-2 border-gray-800">
-          <div className="bg-gray-800 text-white px-4 md:px-6 py-2 text-sm md:text-base font-bold relative clip-path-tab">
-            Öne Çıkan Haberler
+      <div className="bg-white p-4 md:p-6 rounded-sm border border-gray-200 mb-8">
+        <div className="relative mb-6">
+          <div className="flex items-center border-b-2 border-gray-800">
+            <div className="bg-gray-800 text-white px-4 md:px-6 py-2 text-sm md:text-base font-bold relative clip-path-tab">
+              Öne Çıkan Haberler
+            </div>
           </div>
         </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
-          {featuredArticles.map((news) => (
-            <Link key={news.id} to={`/news/${news.id}`} className="relative aspect-video overflow-hidden rounded-sm group">
-              <img 
-                src={normalizeImageUrl(news.imageUrl) || 'https://picsum.photos/seed/f/400/250'} 
-                alt={news.title} 
-                className="w-full h-full absolute inset-0 object-cover transition-transform duration-500 group-hover:scale-105" 
-                referrerPolicy="no-referrer"
-                loading="lazy"
-                onError={(e) => {
-                  e.currentTarget.src = "https://picsum.photos/seed/news-fallback/400/250";
-                }}
-              />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-4 text-white z-10">
-                <div className="flex items-center justify-between mb-2 text-shadow-news">
-                  <span className="px-2 py-0.5 cat-label font-bold text-white uppercase rounded-sm text-shadow-news" style={{ backgroundColor: categories.find(c => c.name === news.category)?.color || '#e60026' }}>
-                    {news.category}
-                  </span>
-                  <div className="flex items-center gap-1 text-[10px] text-white/90 font-medium">
-                    <Clock size={12} className="w-3 h-3" /> {new Date(news.createdAt).toLocaleDateString('tr-TR')}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {featuredArticles.map((news) => (
+              <Link key={news.id} to={`/news/${news.id}`} className="relative aspect-video overflow-hidden rounded-sm group">
+                <img 
+                  src={normalizeImageUrl(news.imageUrl) || 'https://picsum.photos/seed/f/400/250'} 
+                  alt={news.title} 
+                  className="w-full h-full absolute inset-0 object-cover transition-transform duration-500 group-hover:scale-105" 
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.src = "https://picsum.photos/seed/news-fallback/400/250";
+                  }}
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-4 text-white z-10">
+                  <div className="flex items-center justify-between mb-2 text-shadow-news">
+                    <span className="px-2 py-0.5 cat-label font-bold text-white uppercase rounded-sm text-shadow-news" style={{ backgroundColor: categories.find(c => c.name === news.category)?.color || '#e60026' }}>
+                      {news.category}
+                    </span>
+                    <div className="flex items-center gap-1 text-[10px] text-white/90 font-medium">
+                      <Clock size={12} className="w-3 h-3" /> {new Date(news.createdAt).toLocaleDateString('tr-TR')}
+                    </div>
                   </div>
+                  <h3 className="text-lg md:text-xl font-bold text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug text-shadow-news">
+                    {news.title}
+                  </h3>
                 </div>
-                <h3 className="text-lg md:text-xl font-bold text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug text-shadow-news">
-                  {news.title}
-                </h3>
-              </div>
-            </Link>
-          ))}
-          {featuredArticles.length === 0 && (
-            <p className="col-span-full text-center text-gray-500 py-12 bg-white border border-dashed rounded-lg">
-              Öne çıkan haber bulunamadı.
-            </p>
-          )}
-        </div>
+              </Link>
+            ))}
+            {featuredArticles.length === 0 && (
+              <p className="col-span-full text-center text-gray-500 py-12 bg-white border border-dashed rounded-lg">
+                Öne çıkan haber bulunamadı.
+              </p>
+            )}
+          </div>
+      </div>
 
       {/* Homepage Ad Area */}
       <div className="my-6 bg-gray-50 border border-gray-500 flex items-center justify-center overflow-hidden min-h-[160px] shadow-md rounded-sm">
@@ -330,13 +366,38 @@ export default function Home() {
         )}
       </div>
 
-      <div className="mt-0">
+      <div className="mt-0 bg-white p-4 md:p-6 rounded-sm border border-gray-200 mb-8">
         <PhotoGallery />
+      </div>
+
+      {/* Foto Galeri Altı Reklam Alanı */}
+      <div className="mb-8 bg-white border border-gray-200 flex items-center justify-center overflow-hidden min-h-[100px] md:min-h-[160px] shadow-sm rounded-sm">
+        {homeGalleryBottomAd && homeGalleryBottomAd.type === 'image' && homeGalleryBottomAd.imageUrl ? (
+          <a href={homeGalleryBottomAd.link || '#'} target="_blank" rel="noopener noreferrer" className="block w-full">
+            <img 
+              src={normalizeImageUrl(homeGalleryBottomAd.imageUrl)} 
+              alt="Reklam" 
+              className="w-full h-auto min-h-[100px] md:h-[160px] object-cover" 
+              referrerPolicy="no-referrer" 
+              loading="lazy" 
+            />
+          </a>
+        ) : homeGalleryBottomAd && homeGalleryBottomAd.type === 'code' && homeGalleryBottomAd.adCode ? (
+          <div 
+            className="w-full flex justify-center"
+            dangerouslySetInnerHTML={{ __html: homeGalleryBottomAd.adCode }}
+          />
+        ) : (
+          <div className="text-gray-200 font-bold text-lg md:text-2xl uppercase tracking-widest">
+            Foto Galeri Altı Reklam Alanı
+          </div>
+        )}
       </div>
 
       {/* Kategori Haberleri */}
       {displayCategories.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12 mb-12">
+        <div className="bg-white p-4 md:p-8 rounded-sm border border-gray-200 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {displayCategories.map((cat, index) => {
             const catArticles = categoryArticles.filter(a => a.category?.toUpperCase() === (cat.name || '').toUpperCase()).slice(0, 4);
             const firstArticle = catArticles[0];
@@ -422,6 +483,7 @@ export default function Home() {
               </div>
             );
           })}
+          </div>
         </div>
       )}
     </div>
