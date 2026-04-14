@@ -343,7 +343,7 @@ export default function Home() {
       </div>
 
       {/* Homepage Ad Area */}
-      <div className="my-6 bg-gray-50 border border-gray-500 flex items-center justify-center overflow-hidden min-h-[160px] shadow-md rounded-sm">
+      <div className="my-6 bg-white border border-gray-200 flex items-center justify-center overflow-hidden min-h-[160px] shadow-sm rounded-sm">
         {homeAd && homeAd.type === 'image' && homeAd.imageUrl ? (
           <a href={homeAd.link || '#'} target="_blank" rel="noopener noreferrer" className="block w-full">
             <img 
