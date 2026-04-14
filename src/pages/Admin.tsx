@@ -363,6 +363,8 @@ export default function Admin() {
 
   const [homeAd, setHomeAd] = useState<AdConfig>({ type: 'image', imageUrl: '', adCode: '', link: '' });
   const [homeTopAd, setHomeTopAd] = useState<AdConfig>({ type: 'image', imageUrl: '', adCode: '', link: '' });
+  const [homeSliderBottomAd, setHomeSliderBottomAd] = useState<AdConfig>({ type: 'image', imageUrl: '', adCode: '', link: '' });
+  const [homeGalleryBottomAd, setHomeGalleryBottomAd] = useState<AdConfig>({ type: 'image', imageUrl: '', adCode: '', link: '' });
   const [detailAd, setDetailAd] = useState<AdConfig>({ type: 'image', imageUrl: '', adCode: '', link: '' });
   const [sidebarAds, setSidebarAds] = useState<AdConfig[]>([]);
   const [newSidebarAd, setNewSidebarAd] = useState<AdConfig>({ type: 'image', imageUrl: '', adCode: '', link: '' });
@@ -443,10 +445,12 @@ export default function Admin() {
         adsResult.rows.forEach((row: any) => {
           if (row.id === 'home') setHomeAd(row);
           if (row.id === 'home_top') setHomeTopAd(row);
+          if (row.id === 'home_slider_bottom') setHomeSliderBottomAd(row);
+          if (row.id === 'home_gallery_bottom') setHomeGalleryBottomAd(row);
           if (row.id === 'detail') setDetailAd(row);
         });
       }
-
+      
       if (admin.role === 'superadmin') {
         const usersRes = await fetch('/api/admin/users');
         if (usersRes.ok) setAdminUsers(await usersRes.json());
@@ -492,6 +496,8 @@ export default function Admin() {
         adsResult.rows.forEach((row: any) => {
           if (row.id === 'home') setHomeAd(row);
           if (row.id === 'home_top') setHomeTopAd(row);
+          if (row.id === 'home_slider_bottom') setHomeSliderBottomAd(row);
+          if (row.id === 'home_gallery_bottom') setHomeGalleryBottomAd(row);
           if (row.id === 'detail') setDetailAd(row);
         });
       }
@@ -931,6 +937,8 @@ export default function Admin() {
     const adFields = [
       { name: 'Ana Sayfa Reklam', value: homeAd.imageUrl },
       { name: 'Ana Sayfa Üst Reklam', value: homeTopAd.imageUrl },
+      { name: 'Manşet Altı Reklam', value: homeSliderBottomAd.imageUrl },
+      { name: 'Foto Galeri Altı Reklam', value: homeGalleryBottomAd.imageUrl },
       { name: 'Haber Detay Reklam', value: detailAd.imageUrl }
     ];
 
@@ -942,7 +950,7 @@ export default function Admin() {
     }
 
     try {
-      console.log('Saving ads...', { homeAd, homeTopAd, detailAd });
+      console.log('Saving ads...', { homeAd, homeTopAd, homeSliderBottomAd, homeGalleryBottomAd, detailAd });
       
       await db.execute({
         sql: "INSERT OR REPLACE INTO ads (id, type, imageUrl, adCode, link) VALUES ('home', ?, ?, ?, ?)",
@@ -951,6 +959,14 @@ export default function Admin() {
       await db.execute({
         sql: "INSERT OR REPLACE INTO ads (id, type, imageUrl, adCode, link) VALUES ('home_top', ?, ?, ?, ?)",
         args: [homeTopAd.type || 'image', homeTopAd.imageUrl || '', homeTopAd.adCode || '', homeTopAd.link || '']
+      });
+      await db.execute({
+        sql: "INSERT OR REPLACE INTO ads (id, type, imageUrl, adCode, link) VALUES ('home_slider_bottom', ?, ?, ?, ?)",
+        args: [homeSliderBottomAd.type || 'image', homeSliderBottomAd.imageUrl || '', homeSliderBottomAd.adCode || '', homeSliderBottomAd.link || '']
+      });
+      await db.execute({
+        sql: "INSERT OR REPLACE INTO ads (id, type, imageUrl, adCode, link) VALUES ('home_gallery_bottom', ?, ?, ?, ?)",
+        args: [homeGalleryBottomAd.type || 'image', homeGalleryBottomAd.imageUrl || '', homeGalleryBottomAd.adCode || '', homeGalleryBottomAd.link || '']
       });
       await db.execute({
         sql: "INSERT OR REPLACE INTO ads (id, type, imageUrl, adCode, link) VALUES ('detail', ?, ?, ?, ?)",
@@ -1441,7 +1457,7 @@ export default function Admin() {
     }
   };
 
-  const saveAdSlot = async (id: 'home' | 'home_top' | 'detail', config: AdConfig) => {
+  const saveAdSlot = async (id: 'home' | 'home_top' | 'home_slider_bottom' | 'home_gallery_bottom' | 'detail', config: AdConfig) => {
     setIsSavingAds(true);
     try {
       await db.execute({
@@ -2425,7 +2441,9 @@ export default function Admin() {
             <div className="space-y-8">
               {[
                 { id: 'home_top', title: 'Anasayfa Üst Reklamı', size: '1280x160', config: homeTopAd, setter: setHomeTopAd, icon: Monitor, color: 'text-purple-600', bg: 'bg-purple-50' },
+                { id: 'home_slider_bottom', title: 'Anasayfa Manşet Altı Reklamı', size: '1280x160', config: homeSliderBottomAd, setter: setHomeSliderBottomAd, icon: Monitor, color: 'text-red-600', bg: 'bg-red-50' },
                 { id: 'home', title: 'Anasayfa Orta Reklamı', size: '1280x160', config: homeAd, setter: setHomeAd, icon: Monitor, color: 'text-blue-600', bg: 'bg-blue-50' },
+                { id: 'home_gallery_bottom', title: 'Anasayfa Foto Galeri Altı Reklamı', size: '1280x160', config: homeGalleryBottomAd, setter: setHomeGalleryBottomAd, icon: Monitor, color: 'text-green-600', bg: 'bg-green-50' },
                 { id: 'detail', title: 'Haber Detay Reklamı', size: '730x160', config: detailAd, setter: setDetailAd, icon: FileText, color: 'text-orange-600', bg: 'bg-orange-50' }
               ].map((slot) => (
                 <div key={slot.id} className="bg-white rounded-sm shadow-sm border border-gray-100 overflow-hidden flex flex-col">
