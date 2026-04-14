@@ -327,6 +327,8 @@ export default function Admin() {
   const [trafficBg, setTrafficBg] = useState('');
   const [resultsBg, setResultsBg] = useState('');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'articles' | 'settings' | 'gallery' | 'ads' | 'categories' | 'top-menu' | 'service-settings' | 'companies' | 'menus' | 'users'>('dashboard');
+  const [adView, setAdView] = useState<'list' | 'edit'>('list');
+  const [editingAdId, setEditingAdId] = useState<string | null>(null);
   const [admin, setAdmin] = useState<any>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
@@ -381,6 +383,20 @@ export default function Admin() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [editingArticleId, activeTab, editingCategoryId, editingMenuId, editingTopMenuId, editingCompanyId]);
+
+  const currentEditingSlot = useMemo(() => {
+    if (!editingAdId) return null;
+    if (editingAdId === 'sidebar') return { id: 'sidebar', title: 'Yan Panel Reklamları', icon: Layout, color: 'text-purple-600', bg: 'bg-purple-50' };
+    
+    const slots = [
+      { id: 'home_top', title: 'Anasayfa Üst Reklamı', size: '1280x160', config: homeTopAd, setter: setHomeTopAd, icon: Monitor, color: 'text-purple-600', bg: 'bg-purple-50' },
+      { id: 'home_slider_bottom', title: 'Anasayfa Manşet Altı Reklamı', size: '1280x160', config: homeSliderBottomAd, setter: setHomeSliderBottomAd, icon: Monitor, color: 'text-red-600', bg: 'bg-red-50' },
+      { id: 'home', title: 'Anasayfa Orta Reklamı', size: '1280x160', config: homeAd, setter: setHomeAd, icon: Monitor, color: 'text-blue-600', bg: 'bg-blue-50' },
+      { id: 'home_gallery_bottom', title: 'Anasayfa Foto Galeri Altı Reklamı', size: '1280x160', config: homeGalleryBottomAd, setter: setHomeGalleryBottomAd, icon: Monitor, color: 'text-green-600', bg: 'bg-green-50' },
+      { id: 'detail', title: 'Haber Detay Reklamı', size: '730x160', config: detailAd, setter: setDetailAd, icon: FileText, color: 'text-orange-600', bg: 'bg-orange-50' }
+    ];
+    return slots.find(s => s.id === editingAdId);
+  }, [editingAdId, homeTopAd, homeSliderBottomAd, homeAd, homeGalleryBottomAd, detailAd]);
 
   const checkAuth = async () => {
     try {
@@ -1443,7 +1459,11 @@ export default function Admin() {
       await db.execute("CREATE TABLE ads (id TEXT PRIMARY KEY, type TEXT, imageUrl TEXT, adCode TEXT, link TEXT)");
       await db.execute("INSERT INTO ads (id, type, imageUrl, adCode, link) VALUES ('home', 'image', '', '', '')");
       await db.execute("INSERT INTO ads (id, type, imageUrl, adCode, link) VALUES ('home_top', 'image', '', '', '')");
+      await db.execute("INSERT INTO ads (id, type, imageUrl, adCode, link) VALUES ('home_slider_bottom', 'image', '', '', '')");
+      await db.execute("INSERT INTO ads (id, type, imageUrl, adCode, link) VALUES ('home_gallery_bottom', 'image', '', '', '')");
       await db.execute("INSERT INTO ads (id, type, imageUrl, adCode, link) VALUES ('detail', 'image', '', '', '')");
+      
+      await db.execute("CREATE TABLE IF NOT EXISTS sidebarAds (id TEXT PRIMARY KEY, type TEXT, imageUrl TEXT, adCode TEXT, link TEXT)");
       
       clearCache('home_ad');
       clearCache('detail_ad');
@@ -2410,293 +2430,491 @@ export default function Admin() {
       )}
 
       {activeTab === 'ads' && (
-        <div className="space-y-10">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <h2 className="text-3xl font-black text-gray-900 tracking-tight">Reklam Yönetimi</h2>
-              <p className="text-gray-500 mt-1 font-medium">Site genelindeki reklam alanlarını ve içeriklerini profesyonelce yönetin.</p>
-            </div>
-            <div className="flex gap-3">
-              <button 
-                onClick={fixAdsTable}
-                disabled={isFixingAds}
-                className="px-6 py-3 bg-gray-100 text-gray-600 rounded-sm font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition-all flex items-center gap-2 disabled:opacity-50"
-              >
-                {isFixingAds ? <Loader2 className="animate-spin" size={16} /> : <Activity size={16} />} 
-                Tabloyu Onar
-              </button>
-              <button 
-                onClick={handleAdsSubmit}
-                disabled={isSavingAds}
-                className="px-8 py-3 bg-red-600 text-white rounded-sm font-black text-sm uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100 flex items-center gap-2 disabled:opacity-50"
-              >
-                {isSavingAds ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />} 
-                {isSavingAds ? 'Kaydediliyor...' : 'Tümünü Kaydet'}
-              </button>
-            </div>
-          </div>
+        <div className="space-y-8">
+          {adView === 'list' ? (
+            <div className="space-y-10">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                  <h2 className="text-3xl font-black text-gray-900 tracking-tight">Reklam Yönetimi</h2>
+                  <p className="text-gray-500 mt-1 font-medium">Site genelindeki reklam alanlarını ve içeriklerini profesyonelce yönetin.</p>
+                </div>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={fixAdsTable}
+                    disabled={isFixingAds}
+                    className="px-6 py-3 bg-gray-100 text-gray-600 rounded-sm font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isFixingAds ? <Loader2 className="animate-spin" size={16} /> : <Activity size={16} />} 
+                    Tabloyu Onar
+                  </button>
+                  <button 
+                    onClick={handleAdsSubmit}
+                    disabled={isSavingAds}
+                    className="px-8 py-3 bg-red-600 text-white rounded-sm font-black text-sm uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100 flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isSavingAds ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />} 
+                    {isSavingAds ? 'Kaydediliyor...' : 'Tümünü Kaydet'}
+                  </button>
+                </div>
+              </div>
 
-          <div className="space-y-8">
-            {/* Ad Slots List */}
-            <div className="space-y-8">
-              {[
-                { id: 'home_top', title: 'Anasayfa Üst Reklamı', size: '1280x160', config: homeTopAd, setter: setHomeTopAd, icon: Monitor, color: 'text-purple-600', bg: 'bg-purple-50' },
-                { id: 'home_slider_bottom', title: 'Anasayfa Manşet Altı Reklamı', size: '1280x160', config: homeSliderBottomAd, setter: setHomeSliderBottomAd, icon: Monitor, color: 'text-red-600', bg: 'bg-red-50' },
-                { id: 'home', title: 'Anasayfa Orta Reklamı', size: '1280x160', config: homeAd, setter: setHomeAd, icon: Monitor, color: 'text-blue-600', bg: 'bg-blue-50' },
-                { id: 'home_gallery_bottom', title: 'Anasayfa Foto Galeri Altı Reklamı', size: '1280x160', config: homeGalleryBottomAd, setter: setHomeGalleryBottomAd, icon: Monitor, color: 'text-green-600', bg: 'bg-green-50' },
-                { id: 'detail', title: 'Haber Detay Reklamı', size: '730x160', config: detailAd, setter: setDetailAd, icon: FileText, color: 'text-orange-600', bg: 'bg-orange-50' }
-              ].map((slot) => (
-                <div key={slot.id} className="bg-white rounded-sm shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                  <div className="p-5 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 ${slot.bg} rounded-sm flex items-center justify-center ${slot.color}`}>
-                        <slot.icon size={20} />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[
+                  { id: 'home_top', title: 'Anasayfa Üst Reklamı', size: '1280x160', config: homeTopAd, setter: setHomeTopAd, icon: Monitor, color: 'text-purple-600', bg: 'bg-purple-50' },
+                  { id: 'home_slider_bottom', title: 'Anasayfa Manşet Altı Reklamı', size: '1280x160', config: homeSliderBottomAd, setter: setHomeSliderBottomAd, icon: Monitor, color: 'text-red-600', bg: 'bg-red-50' },
+                  { id: 'home', title: 'Anasayfa Orta Reklamı', size: '1280x160', config: homeAd, setter: setHomeAd, icon: Monitor, color: 'text-blue-600', bg: 'bg-blue-50' },
+                  { id: 'home_gallery_bottom', title: 'Anasayfa Foto Galeri Altı Reklamı', size: '1280x160', config: homeGalleryBottomAd, setter: setHomeGalleryBottomAd, icon: Monitor, color: 'text-green-600', bg: 'bg-green-50' },
+                  { id: 'detail', title: 'Haber Detay Reklamı', size: '730x160', config: detailAd, setter: setDetailAd, icon: FileText, color: 'text-orange-600', bg: 'bg-orange-50' }
+                ].map((slot) => (
+                  <div key={slot.id} className="bg-white rounded-sm shadow-sm border border-gray-100 overflow-hidden group hover:shadow-md transition-all flex flex-col">
+                    <div className="p-4 border-b border-gray-50 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 ${slot.bg} rounded-sm flex items-center justify-center ${slot.color}`}>
+                          <slot.icon size={16} />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-sm text-gray-900 truncate max-w-[150px]">{slot.title}</h3>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{slot.size}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-bold text-gray-900">{slot.title}</h3>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{slot.size}</p>
+                      <div className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tighter ${slot.config.imageUrl || slot.config.adCode ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-400'}`}>
+                        {slot.config.imageUrl || slot.config.adCode ? 'Aktif' : 'Boş'}
                       </div>
                     </div>
-                    <button 
-                      onClick={() => saveAdSlot(slot.id as any, slot.config)}
-                      disabled={isSavingAds}
-                      className="px-4 py-2 bg-gray-900 text-white rounded-sm font-bold text-[10px] uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 disabled:opacity-50"
-                    >
-                      {isSavingAds ? <Loader2 className="animate-spin" size={14} /> : <Check size={14} />}
-                      Bu Alanı Kaydet
-                    </button>
+                    
+                    <div className="p-4 flex-grow flex flex-col gap-4">
+                      <div className="aspect-video bg-gray-50 rounded-sm border border-gray-100 overflow-hidden relative group/preview">
+                        {slot.config.type === 'image' && slot.config.imageUrl ? (
+                          <img src={normalizeImageUrl(slot.config.imageUrl)} className="w-full h-full object-cover" alt="" />
+                        ) : slot.config.type === 'code' && slot.config.adCode ? (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-900 p-4">
+                            <code className="text-[8px] text-green-400 font-mono line-clamp-4 break-all">{slot.config.adCode}</code>
+                          </div>
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-gray-300">
+                            <ImageIcon size={24} />
+                            <span className="text-[9px] font-bold uppercase tracking-widest">İçerik Yok</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <button 
+                        onClick={() => {
+                          setEditingAdId(slot.id);
+                          setAdView('edit');
+                        }}
+                        className="w-full py-2.5 bg-gray-50 text-gray-900 rounded-sm font-bold text-[10px] uppercase tracking-widest hover:bg-gray-900 hover:text-white transition-all flex items-center justify-center gap-2"
+                      >
+                        <Edit3 size={14} />
+                        Düzenle
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Sidebar Ads Summary Card */}
+                <div className="bg-white rounded-sm shadow-sm border border-gray-100 overflow-hidden group hover:shadow-md transition-all flex flex-col">
+                  <div className="p-4 border-b border-gray-50 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-purple-50 rounded-sm flex items-center justify-center text-purple-600">
+                        <Layout size={16} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm text-gray-900">Yan Panel</h3>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">300x250 / 300x600</p>
+                      </div>
+                    </div>
+                    <div className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded-full text-[8px] font-black uppercase tracking-tighter">
+                      {sidebarAds.length} Reklam
+                    </div>
                   </div>
                   
-                  <div className="p-6 flex flex-col gap-8">
-                    <div className="space-y-5">
-                      <div className="flex p-1 bg-gray-50 rounded-sm">
+                  <div className="p-4 flex-grow flex flex-col gap-4">
+                    <div className="flex -space-x-2 overflow-hidden">
+                      {sidebarAds.slice(0, 4).map((ad, i) => (
+                        <div key={i} className="inline-block h-10 w-10 rounded-full ring-2 ring-white bg-gray-100 overflow-hidden">
+                          {ad.type === 'image' ? (
+                            <img src={normalizeImageUrl(ad.imageUrl)} className="h-full w-full object-cover" alt="" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center bg-gray-900 text-white">
+                              <FileText size={12} />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {sidebarAds.length > 4 && (
+                        <div className="inline-block h-10 w-10 rounded-full ring-2 ring-white bg-gray-50 flex items-center justify-center text-[10px] font-bold text-gray-400">
+                          +{sidebarAds.length - 4}
+                        </div>
+                      )}
+                      {sidebarAds.length === 0 && (
+                        <div className="w-full h-10 bg-gray-50 rounded-sm flex items-center justify-center text-[9px] font-bold text-gray-300 uppercase tracking-widest">
+                          Reklam Yok
+                        </div>
+                      )}
+                    </div>
+
+                    <button 
+                      onClick={() => {
+                        setEditingAdId('sidebar');
+                        setAdView('edit');
+                      }}
+                      className="w-full py-2.5 bg-gray-50 text-gray-900 rounded-sm font-bold text-[10px] uppercase tracking-widest hover:bg-gray-900 hover:text-white transition-all flex items-center justify-center gap-2"
+                    >
+                      <Settings size={14} />
+                      Yönet
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="max-w-4xl mx-auto space-y-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={() => {
+                      setAdView('list');
+                      setEditingAdId(null);
+                    }}
+                    className="w-10 h-10 bg-white rounded-sm shadow-sm border border-gray-100 flex items-center justify-center text-gray-400 hover:text-red-600 transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
+                  <div>
+                    <h2 className="text-2xl font-black text-gray-900 tracking-tight">{currentEditingSlot?.title}</h2>
+                    <p className="text-gray-500 text-xs font-medium">Reklam içeriğini ve ayarlarını bu panelden güncelleyebilirsiniz.</p>
+                  </div>
+                </div>
+                {currentEditingSlot?.id !== 'sidebar' && (
+                  <button 
+                    onClick={() => saveAdSlot(currentEditingSlot.id, currentEditingSlot.config)}
+                    disabled={isSavingAds}
+                    className="px-8 py-3 bg-red-600 text-white rounded-sm font-black text-sm uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100 flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isSavingAds ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />} 
+                    {isSavingAds ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
+                  </button>
+                )}
+              </div>
+
+              {currentEditingSlot?.id === 'sidebar' ? (
+                <div className="space-y-8">
+                  <div className="bg-white rounded-sm shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="p-6 border-b border-gray-50 bg-gray-50/50">
+                      <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                        <Plus size={18} className="text-red-600" />
+                        Yeni Yan Panel Reklamı Ekle
+                      </h3>
+                    </div>
+                    <div className="p-8 space-y-6">
+                      <div className="flex p-1 bg-gray-50 rounded-sm max-w-xs">
                         <button 
                           type="button"
-                          onClick={() => slot.setter({...slot.config, type: 'image'})}
-                          className={`flex-1 py-2 px-3 rounded-sm font-bold text-xs transition-all ${slot.config.type === 'image' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                          onClick={() => setNewSidebarAd({...newSidebarAd, type: 'image'})}
+                          className={`flex-1 py-2 px-4 rounded-sm font-bold text-xs transition-all ${newSidebarAd.type === 'image' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                           Görsel
                         </button>
                         <button 
                           type="button"
-                          onClick={() => slot.setter({...slot.config, type: 'code'})}
-                          className={`flex-1 py-2 px-3 rounded-sm font-bold text-xs transition-all ${slot.config.type === 'code' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                          onClick={() => setNewSidebarAd({...newSidebarAd, type: 'code'})}
+                          className={`flex-1 py-2 px-4 rounded-sm font-bold text-xs transition-all ${newSidebarAd.type === 'code' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                           Kod
                         </button>
                       </div>
 
-                      {slot.config.type === 'image' ? (
-                        <div className="space-y-4">
-                          <div className="relative group/upload">
-                            <input 
-                              type="file" 
-                              accept="image/*" 
-                              onChange={(e) => handleAdImageUpload(e, slot.id as any)} 
-                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                              disabled={isUploadingAd === slot.id}
-                            />
-                            <div className="w-full aspect-[1280/160] bg-gray-50 border-2 border-dashed border-gray-100 rounded-sm flex flex-col items-center justify-center gap-2 group-hover/upload:border-red-200 transition-colors overflow-hidden relative">
-                              {isUploadingAd === slot.id ? (
-                                <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center z-20">
-                                  <Loader2 className="animate-spin text-red-600 mb-2" size={24} />
-                                  <div className="w-32 h-1 bg-gray-100 rounded-full overflow-hidden mb-1">
-                                    <div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${adUploadProgress[slot.id] || 0}%` }}></div>
+                      {newSidebarAd.type === 'image' ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div className="space-y-4">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Reklam Görseli</label>
+                            <div className="relative group">
+                              <input type="file" accept="image/*" onChange={handleSidebarAdImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                              <div className="w-full aspect-square bg-gray-50 border-2 border-dashed border-gray-100 rounded-sm flex flex-col items-center justify-center gap-3 group-hover:border-red-200 transition-colors overflow-hidden relative">
+                                {isUploadingImage ? (
+                                  <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center z-20">
+                                    <Loader2 className="animate-spin text-red-600 mb-2" size={32} />
+                                    <div className="w-32 h-1 bg-gray-100 rounded-full overflow-hidden mb-1">
+                                      <div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                                    </div>
+                                    <span className="text-[10px] font-bold text-red-600 uppercase tracking-tighter">Yükleniyor %{uploadProgress}</span>
                                   </div>
-                                  <span className="text-[10px] font-bold text-red-600 uppercase tracking-tighter">Yükleniyor %{adUploadProgress[slot.id] || 0}</span>
-                                </div>
-                              ) : null}
-                              
-                              {slot.config.imageUrl ? (
-                                <div className="relative w-full h-full group/img">
-                                  <img src={normalizeImageUrl(slot.config.imageUrl)} className="w-full h-full object-cover" alt="" />
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleAdImageDelete(slot.id as any);
-                                    }}
-                                    className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-sm opacity-0 group-hover/img:opacity-100 transition-all shadow-lg hover:bg-red-700 z-20"
-                                    title="Görseli Sil"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              ) : (
-                                <>
-                                  <ImageIcon className="text-gray-300" size={24} />
-                                  <span className="text-[10px] font-bold text-gray-400 uppercase">Görsel Seç (Max 5MB)</span>
-                                </>
-                              )}
+                                ) : null}
+                                
+                                {newSidebarAd.imageUrl ? (
+                                  <div className="relative w-full h-full group/sidebar-img">
+                                    <img src={normalizeImageUrl(newSidebarAd.imageUrl)} className="w-full h-full object-cover" alt="" />
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSidebarAdImageDelete();
+                                      }}
+                                      className="absolute top-4 right-4 p-2 bg-red-600 text-white rounded-sm opacity-0 group-hover/sidebar-img:opacity-100 transition-all shadow-lg hover:bg-red-700 z-20"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                      <ImageIcon className="text-gray-300" size={32} />
+                                    </div>
+                                    <div className="text-center">
+                                      <span className="block text-xs font-bold text-gray-900">Görsel Seç veya Sürükle</span>
+                                      <span className="text-[10px] text-gray-400 uppercase font-medium mt-1">PNG, JPG, GIF (Max 5MB)</span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Yönlendirme Linki</label>
-                            <input 
-                              type="text" 
-                              value={slot.config.link || ''} 
-                              onChange={(e) => slot.setter({...slot.config, link: e.target.value})} 
-                              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-sm text-sm font-medium outline-none focus:ring-1 focus:ring-red-500 transition-all" 
-                              placeholder="https://..." 
-                            />
+                          <div className="space-y-6">
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Yönlendirme Linki</label>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                  <Globe size={16} className="text-gray-300" />
+                                </div>
+                                <input 
+                                  type="text" 
+                                  value={newSidebarAd.link || ''} 
+                                  onChange={(e) => setNewSidebarAd({...newSidebarAd, link: e.target.value})} 
+                                  className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-sm text-sm font-medium outline-none focus:ring-1 focus:ring-red-500 transition-all" 
+                                  placeholder="https://example.com" 
+                                />
+                              </div>
+                            </div>
+                            <div className="p-6 bg-red-50 rounded-sm border border-red-100">
+                              <h4 className="text-xs font-bold text-red-900 mb-2 flex items-center gap-2">
+                                <Bell size={14} />
+                                Önemli Not
+                              </h4>
+                              <p className="text-[11px] text-red-700 leading-relaxed">
+                                Yan panel reklamları masaüstü görünümde sağ tarafta listelenir. Mobil görünümde ise haber içeriğinin altında gösterilir.
+                              </p>
+                            </div>
+                            <button 
+                              type="button"
+                              onClick={handleSidebarAdSubmit}
+                              disabled={newSidebarAd.type === 'image' ? !newSidebarAd.imageUrl : !newSidebarAd.adCode}
+                              className="w-full py-4 bg-gray-900 text-white rounded-sm font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                              <Plus size={18} />
+                              Reklamı Listeye Ekle
+                            </button>
                           </div>
                         </div>
                       ) : (
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Reklam Kodu (HTML/JS)</label>
+                        <div className="space-y-4">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Reklam Kodu (HTML/JS)</label>
                           <textarea 
-                            value={slot.config.adCode || ''} 
-                            onChange={(e) => slot.setter({...slot.config, adCode: e.target.value})} 
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-sm text-sm font-mono h-[140px] resize-none outline-none focus:ring-1 focus:ring-red-500 transition-all" 
+                            value={newSidebarAd.adCode || ''} 
+                            onChange={(e) => setNewSidebarAd({...newSidebarAd, adCode: e.target.value})} 
+                            className="w-full px-6 py-4 bg-gray-900 text-green-400 border border-gray-800 rounded-sm text-sm font-mono h-48 resize-none outline-none focus:ring-1 focus:ring-red-500 transition-all shadow-inner" 
                             placeholder="<script>...</script>" 
                           />
+                          <button 
+                            type="button"
+                            onClick={handleSidebarAdSubmit}
+                            disabled={!newSidebarAd.adCode}
+                            className="w-full py-4 bg-gray-900 text-white rounded-sm font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                          >
+                            <Plus size={18} />
+                            Reklamı Listeye Ekle
+                          </button>
                         </div>
                       )}
                     </div>
-
-                    <div className="bg-gray-50 rounded-sm p-6 flex flex-col items-center justify-center text-center border border-gray-100">
-                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
-                        <Monitor className="text-gray-300" size={24} />
-                      </div>
-                      <h4 className="text-sm font-bold text-gray-900 mb-2">Önizleme Alanı</h4>
-                      <p className="text-xs text-gray-400 leading-relaxed max-w-[200px]">
-                        {slot.id === 'home_top' ? 'Anasayfanın en üstünde, logonun hemen altında görünür.' : 
-                         slot.id === 'home' ? 'Anasayfada öne çıkan haberlerin altında görünür.' : 
-                         'Haber detay sayfalarında içerik altında görünür.'}
-                      </p>
-                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
 
-            {/* Sidebar Ads */}
-            <div className="bg-white rounded-sm shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-5 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-purple-100 rounded-sm flex items-center justify-center text-purple-600">
-                    <Layout size={18} />
-                  </div>
-                  <h3 className="font-bold text-gray-900">Yan Panel Reklamları</h3>
-                </div>
-              </div>
-
-              <div className="p-6 flex flex-col gap-8">
-                <div className="space-y-6">
-                  {/* Add New Sidebar Ad */}
-                  <div className="space-y-4 p-4 bg-gray-50 rounded-sm border border-gray-100">
-                    <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">Yeni Reklam Ekle</h4>
-                    
-                    <div className="flex p-1 bg-white rounded-sm border border-gray-100">
-                      <button 
-                        type="button"
-                        onClick={() => setNewSidebarAd({...newSidebarAd, type: 'image'})}
-                        className={`flex-1 py-1.5 px-3 rounded-sm font-bold text-[10px] transition-all ${newSidebarAd.type === 'image' ? 'bg-red-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                      >
-                        Görsel
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => setNewSidebarAd({...newSidebarAd, type: 'code'})}
-                        className={`flex-1 py-1.5 px-3 rounded-sm font-bold text-[10px] transition-all ${newSidebarAd.type === 'code' ? 'bg-red-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                      >
-                        Kod
-                      </button>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">Mevcut Yan Panel Reklamları ({sidebarAds.length})</h4>
                     </div>
-
-                    {newSidebarAd.type === 'image' ? (
-                      <div className="space-y-3">
-                        <div className="relative group">
-                          <input type="file" accept="image/*" onChange={handleSidebarAdImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                          <div className="w-full aspect-video bg-white border-2 border-dashed border-gray-200 rounded-sm flex flex-col items-center justify-center gap-1 group-hover:border-red-200 transition-colors overflow-hidden relative">
-                            {isUploadingImage ? (
-                              <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center z-20">
-                                <Loader2 className="animate-spin text-red-600 mb-2" size={20} />
-                                <div className="w-24 h-1 bg-gray-100 rounded-full overflow-hidden mb-1">
-                                  <div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
-                                </div>
-                                <span className="text-[8px] font-bold text-red-600 uppercase tracking-tighter">Yükleniyor %{uploadProgress}</span>
-                              </div>
-                            ) : null}
-                            
-                            {newSidebarAd.imageUrl ? (
-                              <div className="relative w-full h-full group/sidebar-img">
-                                <img src={normalizeImageUrl(newSidebarAd.imageUrl)} className="w-full h-full object-cover" alt="" />
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleSidebarAdImageDelete();
-                                  }}
-                                  className="absolute top-1 right-1 p-1.5 bg-red-600 text-white rounded-sm opacity-0 group-hover/sidebar-img:opacity-100 transition-all shadow-lg hover:bg-red-700 z-20"
-                                  title="Görseli Sil"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {sidebarAds.map((ad) => (
+                        <div key={ad.id} className="group bg-white border border-gray-100 rounded-sm overflow-hidden flex items-center p-3 gap-4 hover:border-red-200 transition-all shadow-sm">
+                          <div className="w-20 h-16 bg-gray-50 rounded-sm overflow-hidden flex-shrink-0 border border-gray-100">
+                            {ad.type === 'image' ? (
+                              <img src={normalizeImageUrl(ad.imageUrl)} className="w-full h-full object-cover" alt="" />
                             ) : (
-                              <>
-                                <ImageIcon className="text-gray-300" size={20} />
-                                <span className="text-[9px] font-bold text-gray-400 uppercase">Görsel Seç</span>
-                              </>
+                              <div className="w-full h-full flex items-center justify-center bg-gray-900 text-green-400">
+                                <FileText size={20} />
+                              </div>
                             )}
                           </div>
+                          <div className="flex-grow min-w-0">
+                            <p className="text-[11px] font-black text-gray-900 uppercase tracking-tight truncate">
+                              {ad.type === 'image' ? 'Görsel Reklam' : 'Kod Reklamı'}
+                            </p>
+                            <p className="text-[10px] text-gray-400 truncate mt-0.5 font-medium">
+                              {ad.link || (ad.type === 'code' ? 'Özel Kod' : 'Link yok')}
+                            </p>
+                          </div>
+                          <button 
+                            type="button"
+                            onClick={() => deleteSidebarAd(ad.id!)}
+                            className="p-3 text-gray-300 hover:text-white hover:bg-red-600 rounded-sm transition-all shadow-sm"
+                          >
+                            <Trash2 size={18} />
+                          </button>
                         </div>
-                        <input type="text" value={newSidebarAd.link || ''} onChange={(e) => setNewSidebarAd({...newSidebarAd, link: e.target.value})} className="w-full px-3 py-2 bg-white border border-gray-200 rounded-sm text-xs font-medium outline-none focus:ring-1 focus:ring-red-500 transition-all" placeholder="Hedef Link" />
+                      ))}
+                      {sidebarAds.length === 0 && (
+                        <div className="col-span-full py-16 text-center bg-white border-2 border-dashed border-gray-100 rounded-sm">
+                          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Megaphone className="text-gray-200" size={32} />
+                          </div>
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Henüz yan panel reklamı eklenmemiş</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white rounded-sm shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="p-8 space-y-10">
+                    <div className="flex p-1 bg-gray-50 rounded-sm max-w-xs">
+                      <button 
+                        type="button"
+                        onClick={() => currentEditingSlot?.setter({...currentEditingSlot.config, type: 'image'})}
+                        className={`flex-1 py-2 px-4 rounded-sm font-bold text-xs transition-all ${currentEditingSlot?.config.type === 'image' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                      >
+                        Görsel Reklam
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => currentEditingSlot?.setter({...currentEditingSlot.config, type: 'code'})}
+                        className={`flex-1 py-2 px-4 rounded-sm font-bold text-xs transition-all ${currentEditingSlot?.config.type === 'code' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                      >
+                        Kod Reklamı
+                      </button>
+                    </div>
+
+                    {currentEditingSlot?.config.type === 'image' ? (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                        <div className="space-y-6">
+                          <div className="space-y-4">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Reklam Görseli</label>
+                            <div className="relative group/upload">
+                              <input 
+                                type="file" 
+                                accept="image/*" 
+                                onChange={(e) => handleAdImageUpload(e, currentEditingSlot.id as any)} 
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                                disabled={isUploadingAd === currentEditingSlot.id}
+                              />
+                              <div className="w-full aspect-[1280/320] bg-gray-50 border-2 border-dashed border-gray-100 rounded-sm flex flex-col items-center justify-center gap-4 group-hover/upload:border-red-200 transition-colors overflow-hidden relative">
+                                {isUploadingAd === currentEditingSlot.id ? (
+                                  <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center z-20">
+                                    <Loader2 className="animate-spin text-red-600 mb-4" size={40} />
+                                    <div className="w-48 h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                                      <div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${adUploadProgress[currentEditingSlot.id] || 0}%` }}></div>
+                                    </div>
+                                    <span className="text-xs font-black text-red-600 uppercase tracking-widest">Yükleniyor %{adUploadProgress[currentEditingSlot.id] || 0}</span>
+                                  </div>
+                                ) : null}
+                                
+                                {currentEditingSlot.config.imageUrl ? (
+                                  <div className="relative w-full h-full group/img">
+                                    <img src={normalizeImageUrl(currentEditingSlot.config.imageUrl)} className="w-full h-full object-contain bg-gray-100" alt="" />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                      <div className="px-4 py-2 bg-white text-gray-900 rounded-sm font-bold text-[10px] uppercase tracking-widest">Görseli Değiştir</div>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleAdImageDelete(currentEditingSlot.id as any);
+                                        }}
+                                        className="p-2 bg-red-600 text-white rounded-sm hover:bg-red-700 transition-all shadow-xl"
+                                      >
+                                        <Trash2 size={18} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                      <ImageIcon className="text-gray-200" size={40} />
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-sm font-black text-gray-900">Görsel Yüklemek İçin Tıklayın</p>
+                                      <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 tracking-widest">Önerilen Boyut: {currentEditingSlot.size}</p>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Yönlendirme Linki</label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <ExternalLink size={16} className="text-gray-300" />
+                              </div>
+                              <input 
+                                type="text" 
+                                value={currentEditingSlot.config.link || ''} 
+                                onChange={(e) => currentEditingSlot.setter({...currentEditingSlot.config, link: e.target.value})} 
+                                className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-sm text-sm font-medium outline-none focus:ring-1 focus:ring-red-500 transition-all" 
+                                placeholder="https://www.example.com" 
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-6">
+                          <div className="p-8 bg-gray-50 rounded-sm border border-gray-100 flex flex-col items-center justify-center text-center min-h-[300px]">
+                            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-6">
+                              <Monitor className="text-gray-300" size={32} />
+                            </div>
+                            <h4 className="text-lg font-black text-gray-900 mb-3">Önizleme ve Bilgi</h4>
+                            <p className="text-sm text-gray-500 leading-relaxed max-w-[300px] font-medium">
+                              {currentEditingSlot.id === 'home_top' ? 'Bu reklam anasayfanın en üstünde, logonun hemen altında tam genişlikte görünür.' : 
+                               currentEditingSlot.id === 'home' ? 'Anasayfada öne çıkan haberlerin altında, kategori bloklarından önce görünür.' : 
+                               currentEditingSlot.id === 'home_slider_bottom' ? 'Anasayfada manşet haberlerin hemen altında, dikkat çekici bir konumda görünür.' :
+                               currentEditingSlot.id === 'home_gallery_bottom' ? 'Anasayfada foto galeri bölümünün altında, alt kısma yakın konumda görünür.' :
+                               'Haber detay sayfalarında, haber içeriğinin hemen altında okuyucuların karşısına çıkar.'}
+                            </p>
+                            <div className="mt-8 flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-gray-100 shadow-sm">
+                              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                              <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Canlı Önizleme Aktif</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     ) : (
-                      <textarea value={newSidebarAd.adCode || ''} onChange={(e) => setNewSidebarAd({...newSidebarAd, adCode: e.target.value})} className="w-full px-3 py-2 bg-white border border-gray-200 rounded-sm text-xs font-mono h-24 resize-none outline-none focus:ring-1 focus:ring-red-500 transition-all" placeholder="<script>...</script>" />
-                    )}
-
-                    <button 
-                      type="button"
-                      onClick={handleSidebarAdSubmit}
-                      disabled={newSidebarAd.type === 'image' ? !newSidebarAd.imageUrl : !newSidebarAd.adCode}
-                      className="w-full py-2.5 bg-gray-900 text-white rounded-sm font-bold text-xs uppercase tracking-widest hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Reklamı Ekle
-                    </button>
-                  </div>
-                </div>
-
-                {/* Sidebar Ads List */}
-                <div className="space-y-3">
-                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mevcut Reklamlar ({sidebarAds.length})</h4>
-                  <div className="space-y-3">
-                    {sidebarAds.map((ad) => (
-                      <div key={ad.id} className="group relative bg-white border border-gray-100 rounded-sm overflow-hidden flex items-center p-2 gap-3 hover:border-red-100 transition-all">
-                        <div className="w-16 h-12 bg-gray-50 rounded-sm overflow-hidden flex-shrink-0">
-                          {ad.type === 'image' ? (
-                            <img src={normalizeImageUrl(ad.imageUrl)} className="w-full h-full object-cover" alt="" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-300">
-                              <FileText size={16} />
-                            </div>
-                          )}
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Reklam Kodu (HTML/JS)</label>
+                          <textarea 
+                            value={currentEditingSlot?.config.adCode || ''} 
+                            onChange={(e) => currentEditingSlot?.setter({...currentEditingSlot.config, adCode: e.target.value})} 
+                            className="w-full px-8 py-6 bg-gray-900 text-green-400 border border-gray-800 rounded-sm text-sm font-mono h-[400px] resize-none outline-none focus:ring-2 focus:ring-red-500/20 transition-all shadow-2xl" 
+                            placeholder="<!-- Reklam kodunu buraya yapıştırın -->\n<script>\n  // Google AdSense veya diğer reklam ağları\n</script>" 
+                          />
                         </div>
-                        <div className="flex-grow min-w-0">
-                          <p className="text-[10px] font-black text-gray-900 uppercase tracking-tight truncate">{ad.type === 'image' ? 'Görsel Reklam' : 'Kod Reklamı'}</p>
-                          <p className="text-[9px] text-gray-400 truncate">{ad.link || 'Link yok'}</p>
+                        <div className="p-6 bg-blue-50 rounded-sm border border-blue-100 flex items-start gap-4">
+                          <div className="w-10 h-10 bg-blue-600 rounded-sm flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-blue-100">
+                            <ShieldAlert size={20} />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-black text-blue-900">Kod Güvenliği</h4>
+                            <p className="text-xs text-blue-700 mt-1 leading-relaxed font-medium">
+                              Yapıştırdığınız kodun güvenilir bir kaynaktan geldiğinden emin olun. Hatalı JavaScript kodları sitenizin çalışmasını engelleyebilir.
+                            </p>
+                          </div>
                         </div>
-                        <button 
-                          type="button"
-                          onClick={() => deleteSidebarAd(ad.id!)}
-                          className="p-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition-all"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))}
-                    {sidebarAds.length === 0 && (
-                      <div className="py-8 text-center border-2 border-dashed border-gray-50 rounded-sm">
-                        <p className="text-[10px] font-bold text-gray-300 uppercase">Reklam Bulunmuyor</p>
                       </div>
                     )}
                   </div>
                 </div>
-              </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
       )}
 
